@@ -903,12 +903,11 @@ static void poll_reset(usbh_lld_stm32f4_driver_data_t *dev)
 
 static enum USBH_POLL_STATUS stm32f4_usbh_poll(void *drvdata, uint32_t time_curr_us)
 {
-
 	(void)time_curr_us;
-	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
-	uint32_t ret = ret = USBH_POLL_STATUS_NONE;
 
-	// TODO: Check overflow case
+	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
+	enum USBH_POLL_STATUS ret = USBH_POLL_STATUS_NONE;
+
 	dev->time_curr_us = time_curr_us;
 
 	switch (dev->state) {
@@ -923,6 +922,7 @@ static enum USBH_POLL_STATUS stm32f4_usbh_poll(void *drvdata, uint32_t time_curr
 	case DEVICE_STATE_RESET:
 		poll_reset(dev);
 		break;
+
 	default:
 		break;
 	}
