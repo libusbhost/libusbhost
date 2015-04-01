@@ -39,6 +39,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+
 static inline void delay_ms_busy_loop(uint32_t ms)
 {
 	volatile uint32_t i;
@@ -61,6 +62,29 @@ static void clock_setup(void)
 	rcc_periph_clock_enable(RCC_USART6); // USART
 	rcc_periph_clock_enable(RCC_OTGFS); // OTG_FS
 	rcc_periph_clock_enable(RCC_OTGHS); // OTG_HS
+	rcc_periph_clock_enable(RCC_TIM6); // TIM6
+}
+
+
+/*
+ * setup 10kHz timer
+ */
+static void tim6_setup(void)
+{
+	timer_reset(TIM6);
+	timer_set_prescaler(TIM6, 16800 - 1);	// 168Mhz/10000hz - 1
+	timer_set_period(TIM6, 65535);			// Overflow in ~6.5 seconds
+	timer_enable_counter(TIM6);
+}
+
+static uint32_t tim6_get_time_us(void)
+{
+	uint32_t cnt = timer_get_counter(TIM6);
+
+	// convert to 1MHz less precise timer value -> units: microseconds
+	uint32_t time_us = cnt * 100;
+
+	return time_us;
 }
 
 static void gpio_setup(void)
@@ -140,6 +164,9 @@ int main(void)
 	clock_setup();
 	gpio_setup();
 
+	// provides time_curr_us to usbh_poll function
+	tim6_setup();
+
 #ifdef USART_DEBUG
 	usart_init(USART6, 921600);
 #endif
@@ -168,18 +195,23 @@ int main(void)
 
 	LOG_PRINTF("USB init complete\r\n");
 
-	uint32_t i = 0;
+	LOG_FLUSH();
 
 	while (1) {
-		LOG_FLUSH();
-
-		// Toggle some led
+		// set busy led
 		gpio_set(GPIOD,  GPIO14);
-		usbh_poll(i);
+
+		uint32_t time_curr_us = tim6_get_time_us();
+
+		usbh_poll(time_curr_us);
+
+		// clear busy led
 		gpio_clear(GPIOD,  GPIO14);
 
+		LOG_FLUSH();
+
+		// approx 1ms interval between usbh_poll()
 		delay_ms_busy_loop(1);
-		i += 1000;
 	}
 
 	return 0;
