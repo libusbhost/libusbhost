@@ -1,0 +1,9 @@
+*.o
+*.d
+*.elf
+*.map
+*.bin
+*.hex
+*.cproject
+*.project
+*.a
