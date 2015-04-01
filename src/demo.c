@@ -52,15 +52,15 @@ static void clock_setup(void)
 	rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
 
 	// GPIO
-	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPAEN);	// OTG_FS + button
-	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPBEN);	// OTG_HS
-	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPCEN);	// USART + OTG_FS charge pump
-	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPDEN);	// LEDS
+	rcc_periph_clock_enable(RCC_GPIOA); // OTG_FS + button
+	rcc_periph_clock_enable(RCC_GPIOB); // OTG_HS
+	rcc_periph_clock_enable(RCC_GPIOC); // USART + OTG_FS charge pump
+	rcc_periph_clock_enable(RCC_GPIOD); // LEDS
 
 	// periphery
-	rcc_peripheral_enable_clock(&RCC_APB2ENR, RCC_APB2ENR_USART6EN);// USART
-	rcc_peripheral_enable_clock(&RCC_AHB2ENR, RCC_AHB2ENR_OTGFSEN);
-	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_OTGHSEN);
+	rcc_periph_clock_enable(RCC_USART6); // USART
+	rcc_periph_clock_enable(RCC_OTGFS); // OTG_FS
+	rcc_periph_clock_enable(RCC_OTGHS); // OTG_HS
 }
 
 static void gpio_setup(void)
