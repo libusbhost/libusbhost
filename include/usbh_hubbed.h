@@ -62,14 +62,23 @@ typedef struct _usbh_dev_driver_info usbh_dev_driver_info_t;
 struct _usbh_dev_driver {
 	bool (*analyze_descriptor)(void *drv, void *descriptor);
 	void *(*init)(void *usbh_dev);
-	void (*poll)(void *drvdata, uint32_t t_us);
+	void (*poll)(void *drvdata, uint32_t time_curr_us);
 	void (*remove)(void *drvdata);
 	const usbh_dev_driver_info_t * const info;
 };
 typedef struct _usbh_dev_driver usbh_dev_driver_t;
 
 void usbh_init(const void *drivers[], const usbh_dev_driver_t * const device_drivers[]);
-void usbh_poll(uint32_t t_us);
+
+/**
+ * \brief usbh_poll
+ * \param time_curr_us - use monotically rising time
+ *
+ *	time_curr_us:
+ *		* can overflow, in time of this writing, after 1s)
+ *		* unit is microseconds
+ */
+void usbh_poll(uint32_t time_curr_us);
 
 END_DECLS
 

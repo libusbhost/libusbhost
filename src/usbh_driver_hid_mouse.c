@@ -29,7 +29,7 @@
 
 static void *mouse_init(void *usbh_dev);
 static bool mouse_analyze_descriptor(void *drvdata, void *descriptor);
-static void mouse_poll(void *drvdata, uint32_t tflp);
+static void mouse_poll(void *drvdata, uint32_t time_curr_us);
 static void mouse_remove(void *drvdata);
 
 static const usbh_dev_driver_info_t usbh_hid_mouse_driver_info = {
@@ -248,13 +248,13 @@ static void read_mouse_in(void *drvdata)
 }
 
 /**
- *
- *  tflp time from last poll [us]
+ * \param time_curr_us - monotically rising time (see usbh_hubbed.h)
+ *		unit is microseconds
  */
-static void mouse_poll(void *drvdata, uint32_t tflp)
+static void mouse_poll(void *drvdata, uint32_t time_curr_us)
 {
-	(void)drvdata;
-	(void)tflp;
+	(void)time_curr_us;
+
 	hid_mouse_device_t *mouse = drvdata;
 	usbh_device_t *dev = mouse->usbh_device;
 	switch (mouse->state_next) {

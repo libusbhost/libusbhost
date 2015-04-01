@@ -30,7 +30,7 @@
 
 static void *gp_xbox_init(void *usbh_dev);
 static bool gp_xbox_analyze_descriptor(void *drvdata, void *descriptor);
-static void gp_xbox_poll(void *drvdata, uint32_t tflp);
+static void gp_xbox_poll(void *drvdata, uint32_t time_curr_us);
 static void gp_xbox_remove(void *drvdata);
 
 static const usbh_dev_driver_info_t usbh_gp_xbox_driver_info = {
@@ -367,12 +367,13 @@ static void read_gp_xbox_in(gp_xbox_device_t *gp_xbox)
 }
 
 /**
- *
- *  tflp time from last poll [us]
+ * \param time_curr_us - monotically rising time (see usbh_hubbed.h)
+ *		unit is microseconds
  */
-static void gp_xbox_poll(void *drvdata, uint32_t tflp)
+static void gp_xbox_poll(void *drvdata, uint32_t time_curr_us)
 {
-	(void)tflp;
+	(void)time_curr_us;
+
 	gp_xbox_device_t *gp_xbox = drvdata;
 	usbh_device_t *dev = gp_xbox->usbh_device;
 

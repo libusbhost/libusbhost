@@ -91,7 +91,7 @@ struct _usbh_driver {
 	void (*init)(void *drvdata);
 	void (*write)(void *drvdata, const usbh_packet_t *packet);
 	void (*read)(void *drvdata, usbh_packet_t *packet);
-	enum USBH_POLL_STATUS (*poll)(void *drvdata, uint32_t t_us);
+	enum USBH_POLL_STATUS (*poll)(void *drvdata, uint32_t time_curr_us);
 	uint8_t (*root_speed)(void *drvdata);
 
 	// Pointer to Low-level driver data

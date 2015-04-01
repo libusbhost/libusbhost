@@ -32,7 +32,7 @@ static hub_device_t hub_device[USBH_MAX_HUBS];
 
 static void *hub_init(void *usbh_dev);
 static bool hub_analyze_descriptor(void *drvdata, void *descriptor);
-static void hub_poll(void *drvdata, uint32_t tflp);
+static void hub_poll(void *drvdata, uint32_t time_curr_us);
 static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data);
 static void hub_remove(void *drvdata);
 
@@ -765,8 +765,8 @@ static void read_ep1(void *drvdata)
 }
 
 /**
- *
- *  tflp time from last poll [ms]
+ * \param time_curr_us - monotically rising time (see usbh_hubbed.h)
+ *		unit is microseconds
  */
 static void hub_poll(void *drvdata, uint32_t time_curr_us)
 {

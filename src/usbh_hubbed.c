@@ -568,7 +568,7 @@ void device_enumeration_start(usbh_device_t *dev)
  * Should be called with at least 1kHz frequency
  *
  */
-void usbh_poll(uint32_t t_us)
+void usbh_poll(uint32_t time_curr_us)
 {
 	uint32_t k = 0;
 	while (usbh_data.lld_drivers[k]) {
@@ -577,7 +577,7 @@ void usbh_poll(uint32_t t_us)
 		usbh_generic_data_t *lld_data = usbh_data.lld_drivers[k]->driver_data;
 
 		enum USBH_POLL_STATUS poll_status =
-			usbh_data.lld_drivers[k]->poll(lld_data, t_us);
+			usbh_data.lld_drivers[k]->poll(lld_data, time_curr_us);
 
 		switch (poll_status) {
 		case USBH_POLL_STATUS_DEVICE_CONNECTED:
@@ -613,7 +613,7 @@ void usbh_poll(uint32_t t_us)
 		}
 
 		if (lld_data->usbh_device[0].drv && usbh_device[0].drvdata) {
-			usbh_device[0].drv->poll(usbh_device[0].drvdata, t_us);
+			usbh_device[0].drv->poll(usbh_device[0].drvdata, time_curr_us);
 		}
 
 		k++;
