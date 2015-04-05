@@ -26,6 +26,7 @@
 #include "usbh_config.h"
 
 #include <stdint.h>
+#include <stdbool.h>
 
 /* This must be placed around external function declaration for C++
  * support. */
@@ -38,13 +39,6 @@
 #endif
 
 BEGIN_DECLS
-
-#ifndef bool
-#define bool _Bool
-#define false 0
-#define true 1
-#endif
-
 
 // set to -1 to unused items
 struct _usbh_dev_driver_info {
