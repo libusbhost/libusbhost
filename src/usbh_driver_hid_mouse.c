@@ -187,7 +187,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			LOG_PRINTF("|empty packet read|");
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
-				mouse->state_next++;
+				mouse->state_next = STATE_SET_CONFIGURATION_COMPLETE;
 				device_xfer_control_read(0, 0, event, dev);
 				break;
 
@@ -274,7 +274,7 @@ static void mouse_poll(void *drvdata, uint32_t time_curr_us)
 			setup_data.wIndex = 0;
 			setup_data.wLength = 0;
 
-			mouse->state_next++;
+			mouse->state_next = STATE_SET_CONFIGURATION_EMPTY_READ;
 
 			device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
 		}
