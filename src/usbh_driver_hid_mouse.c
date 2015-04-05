@@ -107,7 +107,7 @@ static void *mouse_init(void *usbh_dev)
 			drvdata->device_id = i;
 			drvdata->endpoint_in_address = 0;
 			drvdata->endpoint_in_toggle = 0;
-			drvdata->usbh_device = usbh_dev;
+			drvdata->usbh_device = (usbh_device_t *)usbh_dev;
 			break;
 		}
 	}
@@ -120,7 +120,7 @@ static void *mouse_init(void *usbh_dev)
  */
 static bool mouse_analyze_descriptor(void *drvdata, void *descriptor)
 {
-	hid_mouse_device_t *mouse = drvdata;
+	hid_mouse_device_t *mouse = (hid_mouse_device_t *)drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
 	switch (desc_type) {
 	case USB_DT_CONFIGURATION:
@@ -163,7 +163,7 @@ static bool mouse_analyze_descriptor(void *drvdata, void *descriptor)
 
 static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 {
-	hid_mouse_device_t *mouse = dev->drvdata;
+	hid_mouse_device_t *mouse = (hid_mouse_device_t *)dev->drvdata;
 	switch (mouse->state_next) {
 	case STATE_READING_COMPLETE:
 		{
@@ -226,7 +226,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 static void read_mouse_in(void *drvdata)
 {
-	hid_mouse_device_t *mouse = drvdata;
+	hid_mouse_device_t *mouse = (hid_mouse_device_t *)drvdata;
 	usbh_packet_t packet;
 
 	packet.address = mouse->usbh_device->address;
@@ -255,7 +255,7 @@ static void mouse_poll(void *drvdata, uint32_t time_curr_us)
 {
 	(void)time_curr_us;
 
-	hid_mouse_device_t *mouse = drvdata;
+	hid_mouse_device_t *mouse = (hid_mouse_device_t *)drvdata;
 	usbh_device_t *dev = mouse->usbh_device;
 	switch (mouse->state_next) {
 	case STATE_READING_REQUEST:

@@ -115,7 +115,7 @@ static void *gp_xbox_init(void *usbh_dev)
 			drvdata->device_id = i;
 			drvdata->endpoint_in_address = 0;
 			drvdata->endpoint_in_toggle = 0;
-			drvdata->usbh_device = usbh_dev;
+			drvdata->usbh_device = (usbh_device_t *)usbh_dev;
 			break;
 		}
 	}
@@ -128,7 +128,7 @@ static void *gp_xbox_init(void *usbh_dev)
  */
 static bool gp_xbox_analyze_descriptor(void *drvdata, void *descriptor)
 {
-	gp_xbox_device_t *gp_xbox = drvdata;
+	gp_xbox_device_t *gp_xbox = (gp_xbox_device_t *)drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
 	switch (desc_type) {
 	case USB_DT_CONFIGURATION:
@@ -171,7 +171,7 @@ static bool gp_xbox_analyze_descriptor(void *drvdata, void *descriptor)
 
 static void parse_data(usbh_device_t *dev)
 {
-	gp_xbox_device_t *gp_xbox = dev->drvdata;
+	gp_xbox_device_t *gp_xbox = (gp_xbox_device_t *)dev->drvdata;
 
 	uint8_t *packet = gp_xbox->buffer;
 
@@ -266,7 +266,7 @@ static void parse_data(usbh_device_t *dev)
 
 static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 {
-	gp_xbox_device_t *gp_xbox = dev->drvdata;
+	gp_xbox_device_t *gp_xbox = (gp_xbox_device_t *)dev->drvdata;
 	switch (gp_xbox->state_next) {
 	case STATE_READING_COMPLETE:
 		{
@@ -374,7 +374,7 @@ static void gp_xbox_poll(void *drvdata, uint32_t time_curr_us)
 {
 	(void)time_curr_us;
 
-	gp_xbox_device_t *gp_xbox = drvdata;
+	gp_xbox_device_t *gp_xbox = (gp_xbox_device_t *)drvdata;
 	usbh_device_t *dev = gp_xbox->usbh_device;
 
 	switch (gp_xbox->state_next) {

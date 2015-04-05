@@ -93,7 +93,7 @@ static void *hub_init(void *usbh_dev)
 	drvdata = &hub_device[i];
 	drvdata->state = 0;
 	drvdata->ports_num = 0;
-	drvdata->device[0] = usbh_dev;
+	drvdata->device[0] = (usbh_device_t *)usbh_dev;
 	drvdata->busy = 0;
 	drvdata->endpoint_in_address = 0;
 	drvdata->endpoint_in_maxpacketsize = 0;
@@ -110,7 +110,7 @@ static void *hub_init(void *usbh_dev)
  */
 static bool hub_analyze_descriptor(void *drvdata, void *descriptor)
 {
-	hub_device_t *hub = drvdata;
+	hub_device_t *hub = (hub_device_t *)drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
 	switch (desc_type) {
 	case USB_DT_CONFIGURATION:
@@ -165,7 +165,7 @@ static bool hub_analyze_descriptor(void *drvdata, void *descriptor)
 static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 {
 	//~ usbh_device_t *dev = arg;
-	hub_device_t *hub = dev->drvdata;
+	hub_device_t *hub = (hub_device_t *)dev->drvdata;
 
 	LOG_PRINTF("\r\nHUB->STATE = %d\r\n", hub->state);
 	switch (hub->state) {
@@ -744,7 +744,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 static void read_ep1(void *drvdata)
 {
-	hub_device_t *hub = drvdata;
+	hub_device_t *hub = (hub_device_t *)drvdata;
 	usbh_packet_t packet;
 
 	packet.address = hub->device[0]->address;
@@ -770,7 +770,7 @@ static void read_ep1(void *drvdata)
  */
 static void hub_poll(void *drvdata, uint32_t time_curr_us)
 {
-	hub_device_t *hub = drvdata;
+	hub_device_t *hub = (hub_device_t *)drvdata;
 	usbh_device_t *dev = hub->device[0];
 
 	hub->time_curr_us = time_curr_us;
@@ -840,7 +840,7 @@ static void hub_poll(void *drvdata, uint32_t time_curr_us)
 }
 static void hub_remove(void *drvdata)
 {
-	hub_device_t *hub = drvdata;
+	hub_device_t *hub = (hub_device_t *)drvdata;
 	uint8_t i;
 
 	// Call fast... to avoid polling
