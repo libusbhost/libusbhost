@@ -54,8 +54,8 @@ struct _usbh_dev_driver_info {
 typedef struct _usbh_dev_driver_info usbh_dev_driver_info_t;
 
 struct _usbh_dev_driver {
-	bool (*analyze_descriptor)(void *drv, void *descriptor);
 	void *(*init)(void *usbh_dev);
+	bool (*analyze_descriptor)(void *drv, void *descriptor);
 	void (*poll)(void *drvdata, uint32_t time_curr_us);
 	void (*remove)(void *drvdata);
 	const usbh_dev_driver_info_t * const info;
