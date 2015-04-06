@@ -341,15 +341,16 @@ static void stm32f4_usbh_write(void *drvdata, const usbh_packet_t *packet)
 
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) + RX_FIFO_SIZE;
 		const uint32_t * buf32 = packet->data;
-		uint32_t i;
+		int i;
 		for(i = packet->datalen; i > 0; i-=4) {
 			*fifo++ = *buf32++;
 		}
+
 	} else {
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) +
 			RX_FIFO_SIZE + TX_NP_FIFO_SIZE;
 		const uint32_t * buf32 = packet->data;
-		uint32_t i;
+		int i;
 		for(i = packet->datalen; i > 0; i-=4) {
 			*fifo++ = *buf32++;
 		}
