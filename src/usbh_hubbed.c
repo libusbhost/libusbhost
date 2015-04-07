@@ -115,15 +115,6 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 		desc_len = buf[i];
 		desc_type = buf[i + 1];
 		switch (desc_type) {
-		case USB_DT_DEVICE:
-		{
-			struct usb_device_descriptor *device_desc = (void*)&buf[i];
-			LOG_PRINTF("DEVICE DESCRIPTOR");
-			device_info.deviceClass = device_desc->bDeviceClass;
-			device_info.deviceSubClass = device_desc->bDeviceSubClass;
-		}
-			break;
-
 		case USB_DT_INTERFACE:
 		{
 			LOG_PRINTF("INTERFACE_DESCRIPTOR\r\n");
