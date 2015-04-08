@@ -49,7 +49,7 @@ void hub_driver_init(void)
  *
  *
  */
-static void *hub_init(void *usbh_dev)
+static void *init(void *usbh_dev)
 {
 	uint32_t i;
 	hub_device_t *drvdata = 0;
@@ -84,7 +84,7 @@ static void *hub_init(void *usbh_dev)
 /**
  * Returns true if all needed data are parsed
  */
-static bool hub_analyze_descriptor(void *drvdata, void *descriptor)
+static bool analyze_descriptor(void *drvdata, void *descriptor)
 {
 	hub_device_t *hub = (hub_device_t *)drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
@@ -744,7 +744,7 @@ static void read_ep1(void *drvdata)
  * \param time_curr_us - monotically rising time (see usbh_hubbed.h)
  *		unit is microseconds
  */
-static void hub_poll(void *drvdata, uint32_t time_curr_us)
+static void poll(void *drvdata, uint32_t time_curr_us)
 {
 	hub_device_t *hub = (hub_device_t *)drvdata;
 	usbh_device_t *dev = hub->device[0];
@@ -814,7 +814,7 @@ static void hub_poll(void *drvdata, uint32_t time_curr_us)
 		}
 	}
 }
-static void hub_remove(void *drvdata)
+static void remove(void *drvdata)
 {
 	hub_device_t *hub = (hub_device_t *)drvdata;
 	uint8_t i;
@@ -826,7 +826,7 @@ static void hub_remove(void *drvdata)
 	for (i = 1; i < USBH_HUB_MAX_DEVICES + 1; i++) {
 		if (hub->device[i]) {
 			if (hub->device[i]->drv && hub->device[i]->drvdata) {
-				if (hub->device[i]->drv->remove != hub_remove) {
+				if (hub->device[i]->drv->remove != remove) {
 					LOG_PRINTF("\t\t\t\tHUB REMOVE %d\r\n",hub->device[i]->address);
 					hub->device[i]->drv->remove(hub->device[i]->drvdata);
 				}
@@ -840,7 +840,7 @@ static void hub_remove(void *drvdata)
 	}
 }
 
-static const usbh_dev_driver_info_t usbh_hub_driver_info = {
+static const usbh_dev_driver_info_t driver_info = {
 	.deviceClass = 0x09,
 	.deviceSubClass = -1,
 	.deviceProtocol = -1,
@@ -852,9 +852,9 @@ static const usbh_dev_driver_info_t usbh_hub_driver_info = {
 };
 
 const usbh_dev_driver_t usbh_hub_driver = {
-	.init = hub_init,
-	.analyze_descriptor = hub_analyze_descriptor,
-	.poll = hub_poll,
-	.remove = hub_remove,
-	.info = &usbh_hub_driver_info
+	.init = init,
+	.analyze_descriptor = analyze_descriptor,
+	.poll = poll,
+	.remove = remove,
+	.info = &driver_info
 };

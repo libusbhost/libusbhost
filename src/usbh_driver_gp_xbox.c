@@ -74,7 +74,7 @@ void gp_xbox_driver_init(const gp_xbox_config_t *config)
  *
  *
  */
-static void *gp_xbox_init(void *usbh_dev)
+static void *init(void *usbh_dev)
 {
 	if (!initialized) {
 		LOG_PRINTF("driver not initialized");
@@ -102,7 +102,7 @@ static void *gp_xbox_init(void *usbh_dev)
 /**
  * Returns true if all needed data are parsed
  */
-static bool gp_xbox_analyze_descriptor(void *drvdata, void *descriptor)
+static bool analyze_descriptor(void *drvdata, void *descriptor)
 {
 	gp_xbox_device_t *gp_xbox = (gp_xbox_device_t *)drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
@@ -346,7 +346,7 @@ static void read_gp_xbox_in(gp_xbox_device_t *gp_xbox)
  * \param time_curr_us - monotically rising time (see usbh_hubbed.h)
  *		unit is microseconds
  */
-static void gp_xbox_poll(void *drvdata, uint32_t time_curr_us)
+static void poll(void *drvdata, uint32_t time_curr_us)
 {
 	(void)time_curr_us;
 
@@ -384,7 +384,7 @@ static void gp_xbox_poll(void *drvdata, uint32_t time_curr_us)
 	}
 }
 
-static void gp_xbox_remove(void *drvdata)
+static void remove(void *drvdata)
 {
 	LOG_PRINTF("Removing xbox\r\n");
 
@@ -396,7 +396,7 @@ static void gp_xbox_remove(void *drvdata)
 	gp_xbox->endpoint_in_address = 0;
 }
 
-static const usbh_dev_driver_info_t usbh_gp_xbox_driver_info = {
+static const usbh_dev_driver_info_t driver_info = {
 	.deviceClass = 0xff,
 	.deviceSubClass = 0xff,
 	.deviceProtocol = 0xff,
@@ -408,9 +408,9 @@ static const usbh_dev_driver_info_t usbh_gp_xbox_driver_info = {
 };
 
 const usbh_dev_driver_t usbh_gp_xbox_driver = {
-	.init = gp_xbox_init,
-	.analyze_descriptor = gp_xbox_analyze_descriptor,
-	.poll = gp_xbox_poll,
-	.remove = gp_xbox_remove,
-	.info = &usbh_gp_xbox_driver_info
+	.init = init,
+	.analyze_descriptor = analyze_descriptor,
+	.poll = poll,
+	.remove = remove,
+	.info = &driver_info
 };

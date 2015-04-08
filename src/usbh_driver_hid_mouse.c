@@ -71,7 +71,7 @@ void hid_mouse_driver_init(const hid_mouse_config_t *config)
  *
  *
  */
-static void *mouse_init(void *usbh_dev)
+static void *init(void *usbh_dev)
 {
 	uint32_t i;
 	hid_mouse_device_t *drvdata = 0;
@@ -94,7 +94,7 @@ static void *mouse_init(void *usbh_dev)
 /**
  * Returns true if all needed data are parsed
  */
-static bool mouse_analyze_descriptor(void *drvdata, void *descriptor)
+static bool analyze_descriptor(void *drvdata, void *descriptor)
 {
 	hid_mouse_device_t *mouse = (hid_mouse_device_t *)drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
@@ -227,7 +227,7 @@ static void read_mouse_in(void *drvdata)
  * \param time_curr_us - monotically rising time (see usbh_hubbed.h)
  *		unit is microseconds
  */
-static void mouse_poll(void *drvdata, uint32_t time_curr_us)
+static void poll(void *drvdata, uint32_t time_curr_us)
 {
 	(void)time_curr_us;
 
@@ -262,14 +262,14 @@ static void mouse_poll(void *drvdata, uint32_t time_curr_us)
 	}
 }
 
-static void mouse_remove(void *drvdata)
+static void remove(void *drvdata)
 {
 	hid_mouse_device_t *mouse = (hid_mouse_device_t *)drvdata;
 	mouse->state_next = STATE_INACTIVE;
 	mouse->endpoint_in_address = 0;
 }
 
-static const usbh_dev_driver_info_t usbh_hid_mouse_driver_info = {
+static const usbh_dev_driver_info_t driver_info = {
 	.deviceClass = -1,
 	.deviceSubClass = -1,
 	.deviceProtocol = -1,
@@ -281,9 +281,9 @@ static const usbh_dev_driver_info_t usbh_hid_mouse_driver_info = {
 };
 
 const usbh_dev_driver_t usbh_hid_mouse_driver = {
-	.init = mouse_init,
-	.analyze_descriptor = mouse_analyze_descriptor,
-	.poll = mouse_poll,
-	.remove = mouse_remove,
-	.info = &usbh_hid_mouse_driver_info
+	.init = init,
+	.analyze_descriptor = analyze_descriptor,
+	.poll = poll,
+	.remove = remove,
+	.info = &driver_info
 };
