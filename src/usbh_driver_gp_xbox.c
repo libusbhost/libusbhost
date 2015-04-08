@@ -28,30 +28,6 @@
 #include <stdint.h>
 #include <libopencm3/usb/usbstd.h>
 
-static void *gp_xbox_init(void *usbh_dev);
-static bool gp_xbox_analyze_descriptor(void *drvdata, void *descriptor);
-static void gp_xbox_poll(void *drvdata, uint32_t time_curr_us);
-static void gp_xbox_remove(void *drvdata);
-
-static const usbh_dev_driver_info_t usbh_gp_xbox_driver_info = {
-	.deviceClass = 0xff,
-	.deviceSubClass = 0xff,
-	.deviceProtocol = 0xff,
-	.idVendor = 0x045e,
-	.idProduct = 0x028e,
-	.ifaceClass = 0xff,
-	.ifaceSubClass = 93,
-	.ifaceProtocol = 0x01
-};
-
-const usbh_dev_driver_t usbh_gp_xbox_driver = {
-	.init = gp_xbox_init,
-	.analyze_descriptor = gp_xbox_analyze_descriptor,
-	.poll = gp_xbox_poll,
-	.remove = gp_xbox_remove,
-	.info = &usbh_gp_xbox_driver_info
-};
-
 enum STATES {
 	STATE_INACTIVE,
 	STATE_READING_COMPLETE,
@@ -419,3 +395,22 @@ static void gp_xbox_remove(void *drvdata)
 	gp_xbox->state_next = STATE_INACTIVE;
 	gp_xbox->endpoint_in_address = 0;
 }
+
+static const usbh_dev_driver_info_t usbh_gp_xbox_driver_info = {
+	.deviceClass = 0xff,
+	.deviceSubClass = 0xff,
+	.deviceProtocol = 0xff,
+	.idVendor = 0x045e,
+	.idProduct = 0x028e,
+	.ifaceClass = 0xff,
+	.ifaceSubClass = 93,
+	.ifaceProtocol = 0x01
+};
+
+const usbh_dev_driver_t usbh_gp_xbox_driver = {
+	.init = gp_xbox_init,
+	.analyze_descriptor = gp_xbox_analyze_descriptor,
+	.poll = gp_xbox_poll,
+	.remove = gp_xbox_remove,
+	.info = &usbh_gp_xbox_driver_info
+};

@@ -29,31 +29,7 @@
 
 
 static hub_device_t hub_device[USBH_MAX_HUBS];
-
-static void *hub_init(void *usbh_dev);
-static bool hub_analyze_descriptor(void *drvdata, void *descriptor);
-static void hub_poll(void *drvdata, uint32_t time_curr_us);
 static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data);
-static void hub_remove(void *drvdata);
-
-static const usbh_dev_driver_info_t usbh_hub_driver_info = {
-	.deviceClass = 0x09,
-	.deviceSubClass = -1,
-	.deviceProtocol = -1,
-	.idVendor = -1,
-	.idProduct = -1,
-	.ifaceClass = 0x09,
-	.ifaceSubClass = -1,
-	.ifaceProtocol = -1
-};
-
-const usbh_dev_driver_t usbh_hub_driver = {
-	.init = hub_init,
-	.analyze_descriptor = hub_analyze_descriptor,
-	.poll = hub_poll,
-	.remove = hub_remove,
-	.info = &usbh_hub_driver_info
-};
 
 
 
@@ -863,3 +839,22 @@ static void hub_remove(void *drvdata)
 
 	}
 }
+
+static const usbh_dev_driver_info_t usbh_hub_driver_info = {
+	.deviceClass = 0x09,
+	.deviceSubClass = -1,
+	.deviceProtocol = -1,
+	.idVendor = -1,
+	.idProduct = -1,
+	.ifaceClass = 0x09,
+	.ifaceSubClass = -1,
+	.ifaceProtocol = -1
+};
+
+const usbh_dev_driver_t usbh_hub_driver = {
+	.init = hub_init,
+	.analyze_descriptor = hub_analyze_descriptor,
+	.poll = hub_poll,
+	.remove = hub_remove,
+	.info = &usbh_hub_driver_info
+};

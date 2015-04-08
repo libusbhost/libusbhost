@@ -27,30 +27,6 @@
 
 #include <libopencm3/usb/usbstd.h>
 
-static void *mouse_init(void *usbh_dev);
-static bool mouse_analyze_descriptor(void *drvdata, void *descriptor);
-static void mouse_poll(void *drvdata, uint32_t time_curr_us);
-static void mouse_remove(void *drvdata);
-
-static const usbh_dev_driver_info_t usbh_hid_mouse_driver_info = {
-	.deviceClass = -1,
-	.deviceSubClass = -1,
-	.deviceProtocol = -1,
-	.idVendor = -1,
-	.idProduct = -1,
-	.ifaceClass = 0x03,
-	.ifaceSubClass = -1,
-	.ifaceProtocol = 0x02
-};
-
-const usbh_dev_driver_t usbh_hid_mouse_driver = {
-	.init = mouse_init,
-	.analyze_descriptor = mouse_analyze_descriptor,
-	.poll = mouse_poll,
-	.remove = mouse_remove,
-	.info = &usbh_hid_mouse_driver_info
-};
-
 enum STATES {
 	STATE_INACTIVE,
 	STATE_READING_COMPLETE,
@@ -292,3 +268,22 @@ static void mouse_remove(void *drvdata)
 	mouse->state_next = STATE_INACTIVE;
 	mouse->endpoint_in_address = 0;
 }
+
+static const usbh_dev_driver_info_t usbh_hid_mouse_driver_info = {
+	.deviceClass = -1,
+	.deviceSubClass = -1,
+	.deviceProtocol = -1,
+	.idVendor = -1,
+	.idProduct = -1,
+	.ifaceClass = 0x03,
+	.ifaceSubClass = -1,
+	.ifaceProtocol = 0x02
+};
+
+const usbh_dev_driver_t usbh_hid_mouse_driver = {
+	.init = mouse_init,
+	.analyze_descriptor = mouse_analyze_descriptor,
+	.poll = mouse_poll,
+	.remove = mouse_remove,
+	.info = &usbh_hid_mouse_driver_info
+};
