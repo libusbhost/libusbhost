@@ -38,9 +38,6 @@
 /* Transmit periodic FIFO size in 32-bit words. */
 #define TX_P_FIFO_SIZE  (64)
 
-
-
-
 enum CHANNEL_STATE {
 	CHANNEL_STATE_FREE = 0,
 	CHANNEL_STATE_WORK = 1
@@ -103,55 +100,12 @@ typedef struct _usbh_lld_stm32f4_driver_data usbh_lld_stm32f4_driver_data_t;
 #define REBASE_CH(reg, x)	MMIO32(USB_OTG_HS_BASE + reg(x))
 #endif
 
-
-static void stm32f4_usbh_init(void *drvdata);
-static enum USBH_POLL_STATUS stm32f4_usbh_poll(void *drvdata, uint32_t time_curr_us);
-static void stm32f4_usbh_read(void *drvdata, usbh_packet_t *packet);
-static void stm32f4_usbh_write(void *drvdata, const usbh_packet_t *packet);
-uint8_t stm32f4_root_speed(void *drvdata);
-
 static int8_t get_free_channel(void *drvdata);
 static void channels_init(void *drvdata);
 static void rxflvl_handle(void *drvdata);
 static void free_channel(void *drvdata, uint8_t channel);
 
-// USB Full Speed - OTG_FS
-#if defined(USE_STM32F4_USBH_DRIVER_FS)
-#define NUM_CHANNELS_FS		(8)
-static channel_t channels_fs[NUM_CHANNELS_FS];
-static usbh_lld_stm32f4_driver_data_t driver_data_fs = {
-	.base = USB_OTG_FS_BASE,
-	.channels = channels_fs,
-	.num_channels = NUM_CHANNELS_FS
-};
-const usbh_driver_t stm32f4_usbh_driver_fs = {
-	.init = stm32f4_usbh_init,
-	.poll = stm32f4_usbh_poll,
-	.read = stm32f4_usbh_read,
-	.write = stm32f4_usbh_write,
-	.root_speed = stm32f4_root_speed,
-	.driver_data = &driver_data_fs
-};
-#endif
 
-// USB High Speed - OTG_HS
-#if defined(USE_STM32F4_USBH_DRIVER_HS)
-#define NUM_CHANNELS_HS		(12)
-static channel_t channels_hs[NUM_CHANNELS_HS];
-static usbh_lld_stm32f4_driver_data_t driver_data_hs = {
-	.base = USB_OTG_HS_BASE,
-	.channels = channels_hs,
-	.num_channels = NUM_CHANNELS_HS
-};
-const usbh_driver_t stm32f4_usbh_driver_hs = {
-	.init = stm32f4_usbh_init,
-	.poll = stm32f4_usbh_poll,
-	.read = stm32f4_usbh_read,
-	.write = stm32f4_usbh_write,
-	.root_speed = stm32f4_root_speed,
-	.driver_data = &driver_data_hs
-};
-#endif
 
 
 
@@ -1000,7 +954,7 @@ static void channels_init(void *drvdata)
  * Get speed of connected device
  *
  */
-uint8_t stm32f4_root_speed(void *drvdata)
+static uint8_t stm32f4_root_speed(void *drvdata)
 {
 	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
 	(void)dev;
@@ -1036,6 +990,43 @@ void print_channels(const void *lld)
 }
 #endif
 
+// USB Full Speed - OTG_FS
+#if defined(USE_STM32F4_USBH_DRIVER_FS)
+#define NUM_CHANNELS_FS		(8)
+static channel_t channels_fs[NUM_CHANNELS_FS];
+static usbh_lld_stm32f4_driver_data_t driver_data_fs = {
+	.base = USB_OTG_FS_BASE,
+	.channels = channels_fs,
+	.num_channels = NUM_CHANNELS_FS
+};
+const usbh_driver_t stm32f4_usbh_driver_fs = {
+	.init = stm32f4_usbh_init,
+	.poll = stm32f4_usbh_poll,
+	.read = stm32f4_usbh_read,
+	.write = stm32f4_usbh_write,
+	.root_speed = stm32f4_root_speed,
+	.driver_data = &driver_data_fs
+};
+#endif
+
+// USB High Speed - OTG_HS
+#if defined(USE_STM32F4_USBH_DRIVER_HS)
+#define NUM_CHANNELS_HS		(12)
+static channel_t channels_hs[NUM_CHANNELS_HS];
+static usbh_lld_stm32f4_driver_data_t driver_data_hs = {
+	.base = USB_OTG_HS_BASE,
+	.channels = channels_hs,
+	.num_channels = NUM_CHANNELS_HS
+};
+const usbh_driver_t stm32f4_usbh_driver_hs = {
+	.init = stm32f4_usbh_init,
+	.poll = stm32f4_usbh_poll,
+	.read = stm32f4_usbh_read,
+	.write = stm32f4_usbh_write,
+	.root_speed = stm32f4_root_speed,
+	.driver_data = &driver_data_hs
+};
+#endif
 
 const void *usbh_lld_stm32f4_drivers[] = {
 #if defined(USE_STM32F4_USBH_DRIVER_FS)
