@@ -129,7 +129,7 @@ static inline void reset_start(usbh_lld_stm32f4_driver_data_t *dev)
  * Should be nonblocking
  *
  */
-static void stm32f4_usbh_init(void *drvdata)
+static void init(void *drvdata)
 {
 	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
 	dev->state = DEVICE_STATE_INIT;
@@ -187,7 +187,7 @@ static void stm32f4_usbh_port_channel_setup(
 /**
  * TODO: Check for maximum datalength
  */
-static void stm32f4_usbh_read(void *drvdata, usbh_packet_t *packet)
+static void read(void *drvdata, usbh_packet_t *packet)
 {
 	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
 	channel_t *channels = dev->channels;
@@ -234,7 +234,7 @@ static void stm32f4_usbh_read(void *drvdata, usbh_packet_t *packet)
  *
  * 	Bug: datalen > max_packet_size ...
  */
-static void stm32f4_usbh_write(void *drvdata, const usbh_packet_t *packet)
+static void write(void *drvdata, const usbh_packet_t *packet)
 {
 	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
 	channel_t *channels = dev->channels;
@@ -856,7 +856,7 @@ static void poll_reset(usbh_lld_stm32f4_driver_data_t *dev)
 	}
 }
 
-static enum USBH_POLL_STATUS stm32f4_usbh_poll(void *drvdata, uint32_t time_curr_us)
+static enum USBH_POLL_STATUS poll(void *drvdata, uint32_t time_curr_us)
 {
 	(void)time_curr_us;
 
@@ -954,7 +954,7 @@ static void channels_init(void *drvdata)
  * Get speed of connected device
  *
  */
-static uint8_t stm32f4_root_speed(void *drvdata)
+static uint8_t root_speed(void *drvdata)
 {
 	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
 	(void)dev;
@@ -999,12 +999,12 @@ static usbh_lld_stm32f4_driver_data_t driver_data_fs = {
 	.channels = channels_fs,
 	.num_channels = NUM_CHANNELS_FS
 };
-const usbh_driver_t stm32f4_usbh_driver_fs = {
-	.init = stm32f4_usbh_init,
-	.poll = stm32f4_usbh_poll,
-	.read = stm32f4_usbh_read,
-	.write = stm32f4_usbh_write,
-	.root_speed = stm32f4_root_speed,
+static const usbh_driver_t driver_fs = {
+	.init = init,
+	.poll = poll,
+	.read = read,
+	.write = write,
+	.root_speed = root_speed,
 	.driver_data = &driver_data_fs
 };
 #endif
@@ -1018,23 +1018,23 @@ static usbh_lld_stm32f4_driver_data_t driver_data_hs = {
 	.channels = channels_hs,
 	.num_channels = NUM_CHANNELS_HS
 };
-const usbh_driver_t stm32f4_usbh_driver_hs = {
-	.init = stm32f4_usbh_init,
-	.poll = stm32f4_usbh_poll,
-	.read = stm32f4_usbh_read,
-	.write = stm32f4_usbh_write,
-	.root_speed = stm32f4_root_speed,
+static const usbh_driver_t driver_hs = {
+	.init = init,
+	.poll = poll,
+	.read = read,
+	.write = write,
+	.root_speed = root_speed,
 	.driver_data = &driver_data_hs
 };
 #endif
 
 const void *usbh_lld_stm32f4_drivers[] = {
 #if defined(USE_STM32F4_USBH_DRIVER_FS)
-	&stm32f4_usbh_driver_fs,
+	&driver_fs,
 #endif
 
 #if defined(USE_STM32F4_USBH_DRIVER_HS)
-	&stm32f4_usbh_driver_hs,
+	&driver_hs,
 #endif
 	0
 };
