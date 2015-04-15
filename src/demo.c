@@ -72,7 +72,7 @@ static void clock_setup(void)
 static void tim6_setup(void)
 {
 	timer_reset(TIM6);
-	timer_set_prescaler(TIM6, 16800 - 1);	// 168Mhz/10000hz - 1
+	timer_set_prescaler(TIM6, 8400 - 1);	// 84Mhz/10kHz - 1
 	timer_set_period(TIM6, 65535);			// Overflow in ~6.5 seconds
 	timer_enable_counter(TIM6);
 }
