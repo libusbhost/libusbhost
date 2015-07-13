@@ -322,6 +322,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					}
 				}
 				break;
+
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				{
 					LOG_PRINTF("->\t\t\t\t\t ERRSIZ: deschub\r\n");
@@ -345,6 +346,8 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						}
 					}
 				}
+				break;
+
 			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
 			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
 				ERROR(cb_data.status);
@@ -380,6 +383,8 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
 					event(dev, cb_data);
 				}
+				break;
+
 			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
 			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
