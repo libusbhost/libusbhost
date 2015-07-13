@@ -305,6 +305,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 			}
 		}
 		break;
+
 	case 2:
 		switch (cb_data.status) {
 		case USBH_PACKET_CALLBACK_STATUS_OK:
@@ -405,6 +406,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 			}
 		}
 		break;
+
 	case 5:
 		{
 			switch (cb_data.status) {
