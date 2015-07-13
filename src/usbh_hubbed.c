@@ -519,6 +519,10 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 
 		}
 		break;
+
+	default:
+		LOG_PRINTF("Error: Unknown state "__FILE__"/%d\n", __LINE__);
+		break;
 	}
 
 	if (state_start == dev->state) {
