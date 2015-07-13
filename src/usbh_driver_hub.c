@@ -31,11 +31,13 @@
 static hub_device_t hub_device[USBH_MAX_HUBS];
 static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data);
 
-
+static bool initialized = false;
 
 void hub_driver_init(void)
 {
 	uint32_t i;
+
+	initialized = true;
 
 	for (i = 0; i < USBH_MAX_HUBS; i++) {
 		hub_device[i].device[0] = 0;
@@ -51,6 +53,11 @@ void hub_driver_init(void)
  */
 static void *init(void *usbh_dev)
 {
+	if (!initialized) {
+		LOG_PRINTF("\n%s/%d : driver not initialized\r\n", __FILE__, __LINE__);
+		return 0;
+	}
+
 	uint32_t i;
 	hub_device_t *drvdata = 0;
 	// find free data space for hub device
