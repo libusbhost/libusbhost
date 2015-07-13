@@ -195,7 +195,7 @@ static void read(void *drvdata, usbh_packet_t *packet)
 	int8_t channel = get_free_channel(dev);
 	if (channel == -1) {
 		// BIG PROBLEM
-		LOG_PRINTF("FATAL ERROR IN, NO CHANNEL LEFT \r\n");
+		LOG_PRINTF("FATAL ERROR IN, NO CHANNEL LEFT \n");
 		usbh_packet_callback_data_t cb_data;
 		cb_data.status = USBH_PACKET_CALLBACK_STATUS_EFATAL;
 		cb_data.transferred_length = 0;
@@ -243,7 +243,7 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 
 	if (channel == -1) {
 		// BIG PROBLEM
-		LOG_PRINTF("FATAL ERROR OUT, NO CHANNEL LEFT \r\n");
+		LOG_PRINTF("FATAL ERROR OUT, NO CHANNEL LEFT \n");
 		usbh_packet_callback_data_t cb_data;
 		cb_data.status = USBH_PACKET_CALLBACK_STATUS_EFATAL;
 		cb_data.transferred_length = 0;
@@ -309,7 +309,7 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 			*fifo++ = *buf32++;
 		}
 	}
-	LOG_PRINTF("->WRITE %08X\r\n", REBASE_CH(OTG_HCCHAR, channel));
+	LOG_PRINTF("->WRITE %08X\n", REBASE_CH(OTG_HCCHAR, channel));
 }
 
 static void rxflvl_handle(void *drvdata)
@@ -350,7 +350,7 @@ static void rxflvl_handle(void *drvdata)
 	} else if ((rxstsp&OTG_GRXSTSP_PKTSTS_MASK) == OTG_GRXSTSP_PKTSTS_IN_COMP) {
 #ifdef USART_DEBUG
 		uint32_t i;
-		LOG_PRINTF("\r\nDATA: ");
+		LOG_PRINTF("\nDATA: ");
 		for (i = 0; i < channels[channel].data_index; i++) {
 			uint8_t *data = channels[channel].packet.data;
 			LOG_PRINTF("%02X ", data[i]);
@@ -393,7 +393,7 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 				REBASE(OTG_HFIR) = (REBASE(OTG_HFIR) & ~OTG_HFIR_FRIVL_MASK) | 48000;
 				if ((REBASE(OTG_HCFG) & OTG_HCFG_FSLSPCS_MASK) != OTG_HCFG_FSLSPCS_48MHz) {
 					REBASE(OTG_HCFG) = (REBASE(OTG_HCFG) & ~OTG_HCFG_FSLSPCS_MASK) | OTG_HCFG_FSLSPCS_48MHz;
-					LOG_PRINTF("\r\n Reset Full-Speed \r\n");
+					LOG_PRINTF("\n Reset Full-Speed \n");
 				}
 				channels_init(dev);
 				dev->dpstate = DEVICE_POLL_STATE_DEVRST;
@@ -403,7 +403,7 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 				REBASE(OTG_HFIR) = (REBASE(OTG_HFIR) & ~OTG_HFIR_FRIVL_MASK) | 6000;
 				if ((REBASE(OTG_HCFG) & OTG_HCFG_FSLSPCS_MASK) != OTG_HCFG_FSLSPCS_6MHz) {
 					REBASE(OTG_HCFG) = (REBASE(OTG_HCFG) & ~OTG_HCFG_FSLSPCS_MASK) | OTG_HCFG_FSLSPCS_6MHz;
-					LOG_PRINTF("\r\n Reset Low-Speed \r\n");
+					LOG_PRINTF("\n Reset Low-Speed \n");
 				}
 
 				channels_init(dev);
@@ -825,7 +825,7 @@ static void poll_init(usbh_lld_stm32f4_driver_data_t *dev)
 			// Uncomment to enable Interrupt generation
 			REBASE(OTG_GAHBCFG) |= OTG_GAHBCFG_GINT;
 
-			LOG_PRINTF("INIT COMPLETE\r\n");
+			LOG_PRINTF("INIT COMPLETE\n");
 
 			// Finish
 			dev->state = DEVICE_STATE_RUN;
@@ -838,7 +838,7 @@ static void poll_init(usbh_lld_stm32f4_driver_data_t *dev)
 	if (done) {
 		dev->poll_sequence++;
 		dev->timestamp_us = dev->time_curr_us;
-		LOG_PRINTF("\t\t POLL SEQUENCE %d\r\n", dev->poll_sequence);
+		LOG_PRINTF("\t\t POLL SEQUENCE %d\n", dev->poll_sequence);
 	}
 
 }
@@ -852,7 +852,7 @@ static void poll_reset(usbh_lld_stm32f4_driver_data_t *dev)
 
 		LOG_PRINTF("RESET");
 	} else {
-		LOG_PRINTF("waiting %d < %d\r\n",dev->time_curr_us, dev->timestamp_us);
+		LOG_PRINTF("waiting %d < %d\n",dev->time_curr_us, dev->timestamp_us);
 	}
 }
 
@@ -927,7 +927,7 @@ static void free_channel(void *drvdata, uint8_t channel)
 	if (REBASE_CH(OTG_HCCHAR, channel) & OTG_HCCHAR_CHENA) {
 		REBASE_CH(OTG_HCCHAR, channel) |= OTG_HCCHAR_CHDIS;
 		REBASE_CH(OTG_HCINT, channel) = ~0;
-		LOG_PRINTF("\r\nDisabling channel %d\r\n", channel);
+		LOG_PRINTF("\nDisabling channel %d\n", channel);
 	} else {
 		channels[channel].state = CHANNEL_STATE_FREE;
 	}
@@ -983,9 +983,9 @@ void print_channels(const void *lld)
 	usbh_lld_stm32f4_driver_data_t *dev = ((usbh_driver_t *)lld)->driver_data;
 	channel_t *channels = dev->channels;
 	int32_t i;
-	LOG_PRINTF("\r\nCHANNELS: \r\n");
+	LOG_PRINTF("\nCHANNELS: \n");
 	for (i = 0;i < dev->num_channels;i++) {
-		LOG_PRINTF("%4d %4d %4d %08X\r\n", channels[i].state, channels[i].packet.address, channels[i].packet.datalen, MMIO32(dev->base + OTG_HCINT(i)));
+		LOG_PRINTF("%4d %4d %4d %08X\n", channels[i].state, channels[i].packet.address, channels[i].packet.datalen, MMIO32(dev->base + OTG_HCINT(i)));
 	}
 }
 #endif

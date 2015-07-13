@@ -182,7 +182,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			case USBH_PACKET_CALLBACK_STATUS_OK:
 				mouse->state_next = STATE_READING_REQUEST;
 				mouse->endpoint_in_toggle = 0;
-				LOG_PRINTF("\r\nMOUSE CONFIGURED\r\n");
+				LOG_PRINTF("\nMOUSE CONFIGURED\n");
 				break;
 
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
@@ -219,7 +219,7 @@ static void read_mouse_in(void *drvdata)
 	mouse->state_next = STATE_READING_COMPLETE;
 	usbh_read(mouse->usbh_device, &packet);
 
-	// LOG_PRINTF("@MOUSE EP1 |  \r\n");
+	// LOG_PRINTF("@MOUSE EP1 |  \n");
 
 }
 

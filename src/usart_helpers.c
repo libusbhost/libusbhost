@@ -180,7 +180,7 @@ void usart_interrupt(void)
 		if ( data != 3 && data != '\r' && data != '\n') {
 			usart_fifo_push(data);
 		} else {
-			LOG_PRINTF("\r\n>>");
+			LOG_PRINTF("\n>>");
 		}
 	}
 }
@@ -270,7 +270,7 @@ void usart_call_cmd(struct usart_commands * commands)
 					commands[i].callback(&command[command_argindex]);
 				}
 			}
-			usart_write("\r\n>>",4);
+			usart_write("\n>>",4);
 			command_len = 0;
 			command_argindex = 0;
 			return;
@@ -281,7 +281,7 @@ void usart_call_cmd(struct usart_commands * commands)
 	}
 	command_len = 0;
 	command_argindex = 0;
-	LOG_PRINTF("INVALID COMMAND\r\n>>");
+	LOG_PRINTF("INVALID COMMAND\n>>");
 }
 
 #endif

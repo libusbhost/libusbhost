@@ -117,7 +117,7 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 		switch (desc_type) {
 		case USB_DT_INTERFACE:
 		{
-			LOG_PRINTF("INTERFACE_DESCRIPTOR\r\n");
+			LOG_PRINTF("INTERFACE_DESCRIPTOR\n");
 			struct usb_interface_descriptor *iface = (void*)&buf[i];
 			device_info.ifaceClass = iface->bInterfaceClass;
 			device_info.ifaceSubClass = iface->bInterfaceSubClass;
@@ -138,7 +138,7 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 		}
 
 		if (desc_len == 0) {
-			LOG_PRINTF("PROBLEM WITH PARSE %d\r\n",i);
+			LOG_PRINTF("PROBLEM WITH PARSE %d\n",i);
 			return;
 		}
 		i += desc_len;
@@ -154,13 +154,13 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 			void *drvdata = dev->drvdata;
 			LOG_PRINTF("[%d]",buf[i+1]);
 			if (dev->drv->analyze_descriptor(drvdata, &buf[i])) {
-				LOG_PRINTF("Device Initialized\r\n");
+				LOG_PRINTF("Device Initialized\n");
 				return;
 			}
 			i += desc_len;
 		}
 	}
-	LOG_PRINTF("Device NOT Initialized\r\n");
+	LOG_PRINTF("Device NOT Initialized\n");
 }
 
 void usbh_init(const void *drivers_lld[], const usbh_dev_driver_t * const device_drivers[])
@@ -175,7 +175,7 @@ void usbh_init(const void *drivers_lld[], const usbh_dev_driver_t * const device
 	// TODO: init structures
 	uint32_t k = 0;
 	while (usbh_data.lld_drivers[k]) {
-		LOG_PRINTF("DRIVER %d\r\n", k);
+		LOG_PRINTF("DRIVER %d\n", k);
 
 		usbh_device_t * usbh_device =
 			((usbh_generic_data_t *)(usbh_data.lld_drivers[k])->driver_data)->usbh_device;
@@ -214,7 +214,7 @@ void device_xfer_control_write(void *data, uint16_t datalen, usbh_packet_callbac
 	packet.toggle = &dev->toggle0;
 
 	usbh_write(dev, &packet);
-	LOG_PRINTF("WR@device...%d |  \r\n", dev->address);
+	LOG_PRINTF("WR@device...%d |  \n", dev->address);
 }
 
 void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
@@ -233,7 +233,7 @@ void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback
 	packet.toggle = &dev->toggle0;
 
 	usbh_read(dev, &packet);
-	LOG_PRINTF("RD@device...%d |  \r\n", dev->address);
+	LOG_PRINTF("RD@device...%d |  \n", dev->address);
 }
 
 
@@ -254,14 +254,14 @@ usbh_device_t *usbh_get_free_device(const usbh_device_t *dev)
 	usbh_device_t *usbh_device = lld_data->usbh_device;
 
 	uint8_t i;
-	LOG_PRINTF("DEV ADDRESS%d\r\n", dev->address);
+	LOG_PRINTF("DEV ADDRESS%d\n", dev->address);
 	for (i = 0; i < USBH_MAX_DEVICES; i++) {
 		if (usbh_device[i].address < 0) {
 			LOG_PRINTF("\t\t\t\t\tFOUND: %d", i);
 			usbh_device[i].address = i+1;
 			return &usbh_device[i];
 		} else {
-			LOG_PRINTF("address: %d\r\n\r\n\r\n", usbh_device[i].address);
+			LOG_PRINTF("address: %d\n\n\n", usbh_device[i].address);
 		}
 	}
 
@@ -285,7 +285,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 	usbh_generic_data_t *lld_data = lld->driver_data;
 	uint8_t *usbh_buffer = lld_data->usbh_buffer;
 	uint8_t state_start = dev->state; // Detection of hang
-//	LOG_PRINTF("\r\nSTATE: %d\r\n", state);
+//	LOG_PRINTF("\nSTATE: %d\n", state);
 	switch (dev->state) {
 	case 1:
 		{
@@ -311,7 +311,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 		case USBH_PACKET_CALLBACK_STATUS_OK:
 			if (dev->address == 0) {
 				dev->address = usbh_data.address_temporary;
-				LOG_PRINTF("ADDR: %d\r\n", dev->address);
+				LOG_PRINTF("ADDR: %d\n", dev->address);
 			}
 
 			struct usb_setup_data setup_data;
@@ -501,7 +501,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				{
 					struct usb_config_descriptor *cdt =
 						(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
-					LOG_PRINTF("TOTAL_LENGTH: %d\r\n", cdt->wTotalLength);
+					LOG_PRINTF("TOTAL_LENGTH: %d\n", cdt->wTotalLength);
 					device_register(usbh_buffer, cdt->wTotalLength + USB_DT_DEVICE_SIZE, dev);
 					dev->state++;
 
@@ -526,7 +526,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 	}
 
 	if (state_start == dev->state) {
-		LOG_PRINTF("\r\n !HANG %d\r\n", state_start);
+		LOG_PRINTF("\n !HANG %d\n", state_start);
 	}
 }
 
@@ -547,7 +547,7 @@ void device_enumeration_start(usbh_device_t *dev)
 
 	usbh_data.address_temporary = address;
 
-	LOG_PRINTF("\r\n\r\n\r\n ENUMERATION OF DEVICE@%d STARTED \r\n\r\n", address);
+	LOG_PRINTF("\n\n\n ENUMERATION OF DEVICE@%d STARTED \n\n", address);
 
 	struct usb_setup_data setup_data;
 
@@ -579,7 +579,7 @@ void usbh_poll(uint32_t time_curr_us)
 		switch (poll_status) {
 		case USBH_POLL_STATUS_DEVICE_CONNECTED:
 			// New device found
-			LOG_PRINTF("\r\nDEVICE FOUND\r\n");
+			LOG_PRINTF("\nDEVICE FOUND\n");
 			usbh_device[0].lld = usbh_data.lld_drivers[k];
 			usbh_device[0].speed = usbh_data.lld_drivers[k]->root_speed(lld_data);
 			usbh_device[0].address = 1;

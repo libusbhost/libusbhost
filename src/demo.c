@@ -124,7 +124,7 @@ static void gp_xbox_update(uint8_t device_id, gp_xbox_packet_t packet)
 {
 	(void)device_id;
 	(void)packet;
-	LOG_PRINTF("update %d: %d %d \r\n", device_id, packet.axis_left_x, packet.buttons & GP_XBOX_BUTTON_A);
+	LOG_PRINTF("update %d: %d %d \n", device_id, packet.axis_left_x, packet.buttons & GP_XBOX_BUTTON_A);
 }
 
 
@@ -152,7 +152,7 @@ static void mouse_in_message_handler(uint8_t device_id, const uint8_t *data)
 	(void)data;
 	// print only first 4 bytes, since every mouse should have at least these four set.
 	// Report descriptors are not read by driver for now, so we do not know what each byte means
-	LOG_PRINTF("MOUSE EVENT %02X %02X %02X %02X \r\n", data[0], data[1], data[2], data[3]);
+	LOG_PRINTF("MOUSE EVENT %02X %02X %02X %02X \n", data[0], data[1], data[2], data[3]);
 }
 
 static const hid_mouse_config_t mouse_config = {
@@ -170,7 +170,7 @@ int main(void)
 #ifdef USART_DEBUG
 	usart_init(USART6, 921600);
 #endif
-	LOG_PRINTF("\r\n\r\n\r\n\r\n\r\n###################\r\nInit\r\n");
+	LOG_PRINTF("\n\n\n\n\n###################\nInit\n");
 
 	/**
 	 * device driver initialization
@@ -193,7 +193,7 @@ int main(void)
 	usbh_init(usbh_lld_stm32f4_drivers, device_drivers);
 	gpio_clear(GPIOD,  GPIO13);
 
-	LOG_PRINTF("USB init complete\r\n");
+	LOG_PRINTF("USB init complete\n");
 
 	LOG_FLUSH();
 

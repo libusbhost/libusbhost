@@ -291,7 +291,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			case USBH_PACKET_CALLBACK_STATUS_OK:
 				gp_xbox->state_next = STATE_READING_REQUEST;
 				gp_xbox->endpoint_in_toggle = 0;
-				LOG_PRINTF("\r\ngp_xbox CONFIGURED\r\n");
+				LOG_PRINTF("\ngp_xbox CONFIGURED\n");
 				if (gp_xbox_config->notify_connected) {
 					gp_xbox_config->notify_connected(gp_xbox->device_id);
 				}
@@ -314,7 +314,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 		break;
 	default:
 		{
-			LOG_PRINTF("Unknown state\r\n");
+			LOG_PRINTF("Unknown state\n");
 		}
 		break;
 	}
@@ -339,7 +339,7 @@ static void read_gp_xbox_in(gp_xbox_device_t *gp_xbox)
 	gp_xbox->state_next = STATE_READING_COMPLETE;
 	usbh_read(gp_xbox->usbh_device, &packet);
 
-	// LOG_PRINTF("@gp_xbox EP1 |  \r\n");
+	// LOG_PRINTF("@gp_xbox EP1 |  \n");
 }
 
 /**
@@ -386,7 +386,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 
 static void remove(void *drvdata)
 {
-	LOG_PRINTF("Removing xbox\r\n");
+	LOG_PRINTF("Removing xbox\n");
 
 	gp_xbox_device_t *gp_xbox = (gp_xbox_device_t *)drvdata;
 	if (gp_xbox_config->notify_disconnected) {

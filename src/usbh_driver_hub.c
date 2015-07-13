@@ -106,7 +106,7 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 					hub->endpoint_in_maxpacketsize = ep->wMaxPacketSize;
 				}
 			}
-			LOG_PRINTF("ENDPOINT DESCRIPTOR FOUND\r\n");
+			LOG_PRINTF("ENDPOINT DESCRIPTOR FOUND\n");
 		}
 		break;
 
@@ -117,15 +117,15 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 			if ( desc->head.bNbrPorts <= USBH_HUB_MAX_DEVICES) {
 				hub->ports_num = desc->head.bNbrPorts;
 			} else {
-				LOG_PRINTF("INCREASE NUMBER OF ENABLED PORTS\r\n");
+				LOG_PRINTF("INCREASE NUMBER OF ENABLED PORTS\n");
 				hub->ports_num = USBH_HUB_MAX_DEVICES;
 			}
-			LOG_PRINTF("HUB DESCRIPTOR FOUND \r\n");
+			LOG_PRINTF("HUB DESCRIPTOR FOUND \n");
 		}
 		break;
 
 	default:
-		LOG_PRINTF("TYPE: %02X \r\n",desc_type);
+		LOG_PRINTF("TYPE: %02X \n",desc_type);
 		break;
 	}
 
@@ -143,7 +143,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 	//~ usbh_device_t *dev = arg;
 	hub_device_t *hub = (hub_device_t *)dev->drvdata;
 
-	LOG_PRINTF("\r\nHUB->STATE = %d\r\n", hub->state);
+	LOG_PRINTF("\nHUB->STATE = %d\n", hub->state);
 	switch (hub->state) {
 	case 26:
 		switch (cb_data.status) {
@@ -157,7 +157,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				}
 				int8_t port = 0;
 
-				LOG_PRINTF("psc:%d\r\n",psc);
+				LOG_PRINTF("psc:%d\n",psc);
 				// Driver error... port not found
 				if (!psc) {
 					// Continue reading status change endpoint
@@ -197,7 +197,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				hub->state = 31;
 
 				hub->current_port = port;
-				LOG_PRINTF("\r\n\r\nPORT FOUND: %d\r\n", port);
+				LOG_PRINTF("\n\nPORT FOUND: %d\n", port);
 				device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
 			}
 			break;
@@ -212,7 +212,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 			// In case of EAGAIN error, retry read on status endpoint
 			hub->state = 25;
-			LOG_PRINTF("HUB: Retrying...\r\n");
+			LOG_PRINTF("HUB: Retrying...\n");
 			break;
 		}
 		break;
@@ -242,7 +242,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				if (hub->ports_num) {
 					hub->index = 0;
 					hub->state = 6;
-					LOG_PRINTF("No need to get HUB DESC\r\n");
+					LOG_PRINTF("No need to get HUB DESC\n");
 					event(dev, cb_data);
 				} else {
 					hub->endpoint_in_toggle = 0;
@@ -258,7 +258,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 					hub->state++;
 					device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
-					LOG_PRINTF("DO Need to get HUB DESC\r\n");
+					LOG_PRINTF("DO Need to get HUB DESC\n");
 				}
 				break;
 
@@ -325,7 +325,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				{
-					LOG_PRINTF("->\t\t\t\t\t ERRSIZ: deschub\r\n");
+					LOG_PRINTF("->\t\t\t\t\t ERRSIZ: deschub\n");
 					struct usb_hub_descriptor*hub_descriptor =
 						(struct usb_hub_descriptor *)hub->buffer;
 
@@ -335,7 +335,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							if ( hub_descriptor->head.bNbrPorts <= USBH_HUB_MAX_DEVICES) {
 								hub->ports_num = hub_descriptor->head.bNbrPorts;
 							} else {
-								LOG_PRINTF("INCREASE NUMBER OF ENABLED PORTS\r\n");
+								LOG_PRINTF("INCREASE NUMBER OF ENABLED PORTS\n");
 								hub->ports_num = USBH_HUB_MAX_DEVICES;
 							}
 							hub->state++;
@@ -378,7 +378,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					// Delay Based on hub descriptor field bPwr2PwrGood
 					// delay_ms_busy_loop(200);
 
-					LOG_PRINTF("\r\nHUB CONFIGURED & PORTS POWERED\r\n");
+					LOG_PRINTF("\nHUB CONFIGURED & PORTS POWERED\n");
 
 					cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
 					event(dev, cb_data);
@@ -553,7 +553,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							// Check, whether device is in connected state
 							if (!hub->device[port]) {
 								if (!usbh_enum_available() || hub->busy) {
-									LOG_PRINTF("\r\n\t\t\tCannot enumerate %d %d\r\n", !usbh_enum_available(), hub->busy);
+									LOG_PRINTF("\n\t\t\tCannot enumerate %d %d\n", !usbh_enum_available(), hub->busy);
 									hub->state = 25;
 									break;
 								}
@@ -587,11 +587,11 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							LOG_PRINTF("RESET");
 							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
 						} else {
-							LOG_PRINTF("another STC %d\r\n", stc);
+							LOG_PRINTF("another STC %d\n", stc);
 						}
 					} else {
 						hub->state = 25;
-						LOG_PRINTF("HUB status change\r\n");
+						LOG_PRINTF("HUB status change\n");
 					}
 				}
 				break;
@@ -630,7 +630,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
 						}
 					} else {
-						LOG_PRINTF("\t\t\t\tDISCONNECT EVENT\r\n");
+						LOG_PRINTF("\t\t\t\tDISCONNECT EVENT\n");
 						if (hub->device[port]->drv && hub->device[port]->drvdata) {
 							hub->device[port]->drv->remove(hub->device[port]->drvdata);
 						}
@@ -661,7 +661,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
 				{
-					LOG_PRINTF("\r\nPOLL\r\n");
+					LOG_PRINTF("\nPOLL\n");
 					int8_t port = hub->current_port;
 					uint16_t sts = hub->hub_and_port_status[port].sts;
 
@@ -670,7 +670,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						hub->device[port] = usbh_get_free_device(dev);
 
 						if (!hub->device[port]) {
-							LOG_PRINTF("\r\nFATAL ERROR\r\n");
+							LOG_PRINTF("\nFATAL ERROR\n");
 							return;// DEAD END
 						}
 						if ((sts & (1<<(HUB_FEATURE_PORT_LOWSPEED))) &&
@@ -700,7 +700,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 
 					} else {
-						LOG_PRINTF("%s:%d Do not know what to do, when device is disabled after reset\r\n", __FILE__, __LINE__);
+						LOG_PRINTF("%s:%d Do not know what to do, when device is disabled after reset\n", __FILE__, __LINE__);
 						hub->state = 25;
 						return;
 					}
@@ -718,7 +718,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 		}
 		break;
 	default:
-		LOG_PRINTF("UNHANDLED EVENT %d\r\n",hub->state);
+		LOG_PRINTF("UNHANDLED EVENT %d\n",hub->state);
 		break;
 	}
 }
@@ -741,7 +741,7 @@ static void read_ep1(void *drvdata)
 
 	hub->state = 26;
 	usbh_read(hub->device[0], &packet);
-	LOG_PRINTF("@hub %d/EP1 |  \r\n", hub->device[0]->address);
+	LOG_PRINTF("@hub %d/EP1 |  \n", hub->device[0]->address);
 
 }
 
@@ -762,14 +762,14 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 			if (usbh_enum_available()) {
 				read_ep1(hub);
 			} else {
-				LOG_PRINTF("enum not available\r\n");
+				LOG_PRINTF("enum not available\n");
 			}
 		}
 		break;
 
 	case 1:
 		{
-			LOG_PRINTF("CFGVAL: %d\r\n", hub->buffer[0]);
+			LOG_PRINTF("CFGVAL: %d\n", hub->buffer[0]);
 			struct usb_setup_data setup_data;
 
 			setup_data.bmRequestType = 0b00000000;
@@ -787,7 +787,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 		if (hub->time_curr_us - hub->timestamp_us > 500000) {
 			int8_t port = hub->current_port;
 			LOG_PRINTF("PORT: %d", port);
-			LOG_PRINTF("\r\nNEW device at address: %d\r\n", hub->device[port]->address);
+			LOG_PRINTF("\nNEW device at address: %d\n", hub->device[port]->address);
 			hub->device[port]->lld = hub->device[0]->lld;
 
 			device_enumeration_start(hub->device[port]);
@@ -832,7 +832,7 @@ static void remove(void *drvdata)
 		if (hub->device[i]) {
 			if (hub->device[i]->drv && hub->device[i]->drvdata) {
 				if (hub->device[i]->drv->remove != remove) {
-					LOG_PRINTF("\t\t\t\tHUB REMOVE %d\r\n",hub->device[i]->address);
+					LOG_PRINTF("\t\t\t\tHUB REMOVE %d\n",hub->device[i]->address);
 					hub->device[i]->drv->remove(hub->device[i]->drvdata);
 				}
 			}
