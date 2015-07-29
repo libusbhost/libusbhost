@@ -61,6 +61,8 @@
 
 #define CURRENT_PORT_NONE -1
 
+#define EMPTY_PACKET_READ_STATE 255
+
 struct _hub_device {
 	usbh_device_t *device[USBH_HUB_MAX_DEVICES + 1];
 	uint8_t buffer[USBH_HUB_BUFFER_SIZE];
@@ -68,6 +70,8 @@ struct _hub_device {
 	uint8_t endpoint_in_address;
 	uint8_t endpoint_in_toggle;
 	uint8_t state;
+	uint8_t state_after_empty_read;
+
 	uint8_t desc_len;
 	uint16_t ports_num;
 	int8_t index;

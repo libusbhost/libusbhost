@@ -29,7 +29,6 @@
 
 
 static hub_device_t hub_device[USBH_MAX_HUBS];
-static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data);
 
 static bool initialized = false;
 
@@ -224,19 +223,21 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 		}
 		break;
 
-	case 2:
+	case EMPTY_PACKET_READ_STATE:
 		{
 			LOG_PRINTF("|empty packet read|");
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
 				device_xfer_control_read(0, 0, event, dev);
-				hub->state++;
+				hub->state = hub->state_after_empty_read;
+				hub->state_after_empty_read = 0;
 				break;
 
 			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
 			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
+				hub->state = hub->state_after_empty_read;
+				event(dev, cb_data);
 				break;
 			}
 		}
@@ -377,6 +378,9 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					setup_data.wValue = HUB_FEATURE_PORT_POWER;
 					setup_data.wIndex = hub->index;
 					setup_data.wLength = 0;
+
+					hub->state_after_empty_read = hub->state;
+					hub->state = EMPTY_PACKET_READ_STATE;
 
 					device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
 				} else {
@@ -575,7 +579,9 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							setup_data.wIndex = port;
 							setup_data.wLength = 0;
 
-							hub->state = 33;
+							hub->state_after_empty_read = 33;
+							hub->state = EMPTY_PACKET_READ_STATE;
+
 							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
 
 						} else if(stc & (1<<HUB_FEATURE_PORT_RESET)) {
@@ -589,7 +595,8 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							setup_data.wIndex = port;
 							setup_data.wLength = 0;
 
-							hub->state = 35;
+							hub->state_after_empty_read = 35;
+							hub->state = EMPTY_PACKET_READ_STATE;
 
 							LOG_PRINTF("RESET");
 							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
@@ -630,7 +637,9 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							setup_data.wIndex = port;
 							setup_data.wLength = 0;
 
-							hub->state = 11;
+							hub->state_after_empty_read = 11;
+							hub->state = EMPTY_PACKET_READ_STATE;
+
 							LOG_PRINTF("CONN");
 
 							hub->busy = 1;
@@ -694,7 +703,9 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							setup_data.wLength = 0;
 
 							// After write process another devices, poll for events
-							hub->state = 11;//Expecting all ports are powered (constant/non-changeable after init)
+							hub->state_after_empty_read = 11;//Expecting all ports are powered (constant/non-changeable after init)
+							hub->state = EMPTY_PACKET_READ_STATE;
+
 							hub->current_port = CURRENT_PORT_NONE;
 							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
 						} else if (!(sts & (1<<(HUB_FEATURE_PORT_LOWSPEED))) &&
@@ -785,7 +796,8 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 			setup_data.wIndex = 0;
 			setup_data.wLength = 0;
 
-			hub->state += 2;
+			hub->state = EMPTY_PACKET_READ_STATE;
+			hub->state_after_empty_read = 3;
 			device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
 
 		}
