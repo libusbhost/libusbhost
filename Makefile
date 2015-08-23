@@ -92,8 +92,10 @@ STYLECHECKFILES	:= $(shell find . -name '*.[ch]')
 LDSCRIPT	?= $(BINARY).ld
 
 
-SRCS = $(sort $(notdir $(wildcard $(SRCDIR)/*.c)))
-OBJSDEMO = $(patsubst %.c, build/%.o ,$(SRCS))
+SRCS := $(sort $(notdir $(wildcard $(SRCDIR)/*.c)))
+OBJSDEMO := $(patsubst %.c, build/%.o ,$(SRCS))
+SRCS := $(sort $(notdir $(wildcard $(SRCDIR)/*.cpp)))
+OBJSDEMO += $(patsubst %.cpp, build/%.o ,$(SRCS))
 OBJS = $(filter-out $(BINARY).o, $(OBJSDEMO))
 
 
