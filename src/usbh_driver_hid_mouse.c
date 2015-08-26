@@ -218,7 +218,7 @@ static void read_mouse_in(void *drvdata)
 	packet.datalen = mouse->endpoint_in_maxpacketsize;
 	packet.endpoint_address = mouse->endpoint_in_address;
 	packet.endpoint_size_max = mouse->endpoint_in_maxpacketsize;
-	packet.endpoint_type = USBH_EPTYP_BULK;
+	packet.endpoint_type = USBH_EPTYP_INTERRUPT;
 	packet.speed = mouse->usbh_device->speed;
 	packet.callback = event;
 	packet.callback_arg = mouse->usbh_device;
