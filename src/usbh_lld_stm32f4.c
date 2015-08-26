@@ -160,11 +160,16 @@ static void stm32f4_usbh_port_channel_setup(
 		eptyp = OTG_HCCHAR_EPTYP_BULK;
 		break;
 	case USBH_EPTYP_INTERRUPT:
-		eptyp = OTG_HCCHAR_EPTYP_INTERRUPT;
+		// Use bulk transfer also for interrupt, since no difference is on protocol layer
+		// Except different behaviour of the core
+		eptyp = OTG_HCCHAR_EPTYP_BULK;
 		break;
 	case USBH_EPTYP_ISOCHRONOUS:
 		eptyp = OTG_HCCHAR_EPTYP_ISOCHRONOUS;
 		break;
+	default:
+		LOG_PRINTF("\n\n\n\nWRONG EP TYPE\n\n\n\n\n");
+		return;
 	}
 
 	uint32_t speed = 0;
@@ -175,10 +180,10 @@ static void stm32f4_usbh_port_channel_setup(
 	REBASE_CH(OTG_HCCHAR, channel) = OTG_HCCHAR_CHENA |
 				(OTG_HCCHAR_DAD_MASK & (address << 22)) |
 				OTG_HCCHAR_MCNT_1 |
-				(OTG_HCCHAR_EPTYP_MASK & (eptyp << 18)) |
+				(OTG_HCCHAR_EPTYP_MASK & (eptyp)) |
 				(speed) |
 				(epdir) |
-				(OTG_HCCHAR_EPNUM_MASK & (epnum << 11) )|
+				(OTG_HCCHAR_EPNUM_MASK & (epnum << 11)) |
 				(OTG_HCCHAR_MPSIZ_MASK & max_packet_size);
 
 }
