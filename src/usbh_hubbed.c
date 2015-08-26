@@ -370,6 +370,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				{
 					struct usb_device_descriptor *ddt =
 							(struct usb_device_descriptor *)&usbh_buffer[0];
+					dev->packet_size_max0 = ddt->bMaxPacketSize0;
 					struct usb_setup_data setup_data;
 
 					setup_data.bmRequestType = 0b10000000;
