@@ -20,9 +20,9 @@
  *
  */
 
+#include "driver/usbh_device_driver.h"
 #include "usbh_lld_stm32f4.h"
 #include "usart_helpers.h"
-#include "driver/usbh_device_driver.h"
 
 #include <string.h>
 #include <stdint.h>
@@ -301,9 +301,22 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) + RX_FIFO_SIZE;
 		const uint32_t * buf32 = packet->data;
 		int i;
-		for(i = packet->datalen; i > 0; i-=4) {
+		LOG_PRINTF("\nSending[%d]: ", packet->datalen);
+		for(i = packet->datalen; i >= 4; i-=4) {
+			const uint8_t *buf8 = (const uint8_t *)buf32;
+			LOG_PRINTF("%02X %02X %02X %02X, ", buf8[0], buf8[1], buf8[2], buf8[3]);
 			*fifo++ = *buf32++;
+
 		}
+
+		if (i > 0) {
+			*fifo = *buf32&((1 << (8*i)) - 1);
+			uint8_t *buf8 = (uint8_t *)buf32;
+			while (i--) {
+				LOG_PRINTF("%02X ", *buf8++);
+			}
+		}
+		LOG_PRINTF("\n");
 
 	} else {
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) +
