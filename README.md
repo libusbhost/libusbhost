@@ -33,7 +33,8 @@ Native device drivers (mostly for demonstration purposes):
 
 ###Practical info
 
-!!! Do not forget to invoke   "make clean"  before new build when defines change
+!!! Do not forget to invoke   "make clean"  before new build when defines change(_TODO: remove this warning and fix the Makefile_)
+
 
 **How to initialize repository**
 
