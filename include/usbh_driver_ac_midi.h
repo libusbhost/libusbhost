@@ -2,7 +2,7 @@
  * This file is part of the libusbhost library
  * hosted at http://github.com/libusbhost/libusbhost
  *
- * Copyright (C) 2015 Amir Hammad <amir.hammad@hotmail.com>
+ * Copyright (C) 2016 Amir Hammad <amir.hammad@hotmail.com>
  *
  *
  * libusbhost is free software: you can redistribute it and/or modify
@@ -20,43 +20,29 @@
  *
  */
 
-#ifndef USBH_CONFIG_
-#define USBH_CONFIG_
+#ifndef USBH_DRIVER_AC_MIDI_
+#define USBH_DRIVER_AC_MIDI_
 
+#include "usbh_hubbed.h"
 
+#include <stdint.h>
 
-// Max devices per hub
-#define USBH_HUB_MAX_DEVICES	(8)
+BEGIN_DECLS
 
-// Max number of hub instancies
-#define USBH_MAX_HUBS		(2)
+struct _midi_config {
+	void (*read_callback)(int device_id, uint8_t *data);
+	void (*notify_connected)(int device_id);
+	void (*notify_disconnected)(int device_id);
+};
+typedef struct _midi_config midi_config_t;
 
-// Max devices
-#define USBH_MAX_DEVICES		(15)
+typedef void (*midi_write_callback_t)(uint8_t);
 
-// Min: 128
-// Set this wisely
-#define BUFFER_ONE_BYTES	(2048)
+void midi_driver_init(const midi_config_t *config);
+void usbh_midi_write(uint8_t device_id, const void *data, uint32_t length, midi_write_callback_t callback);
 
-// MOUSE
-#define USBH_HID_MOUSE_MAX_DEVICES	(2)
+extern const usbh_dev_driver_t usbh_midi_driver;
 
-#define USBH_HID_MOUSE_BUFFER		(32)
-
-// MIDI
-// Maximal number of midi devices connected to whatever hub
-#define USBH_AC_MIDI_MAX_DEVICES	(4)
-
-#define USBH_AC_MIDI_BUFFER 	(64)
-
-// Gamepad XBOX
-#define USBH_GP_XBOX_MAX_DEVICES	(2)
-
-#define USBH_GP_XBOX_BUFFER		(32)
-
-/* Sanity checks */
-#if (USBH_MAX_DEVICES > 127)
-#error USBH_MAX_DEVICES > 127
-#endif
+END_DECLS
 
 #endif

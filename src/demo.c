@@ -26,6 +26,7 @@
 #include "usbh_driver_hid_mouse.h"	/// provides usb device driver Human Interface Device - type mouse
 #include "usbh_driver_hub.h"		/// provides usb full speed hub driver (Low speed devices on hub are not supported)
 #include "usbh_driver_gp_xbox.h"	/// provides usb device driver for Gamepad: Microsoft XBOX compatible Controller
+#include "usbh_driver_ac_midi.h"	/// provides usb device driver for midi class devices
 
  // STM32f407 compatible
 #include <libopencm3/stm32/rcc.h>
@@ -117,6 +118,7 @@ static const usbh_dev_driver_t *device_drivers[] = {
 	&usbh_hub_driver,
 	&usbh_hid_mouse_driver,
 	&usbh_gp_xbox_driver,
+	&usbh_midi_driver,
 	0
 };
 
@@ -159,6 +161,27 @@ static const hid_mouse_config_t mouse_config = {
 	.mouse_in_message_handler = &mouse_in_message_handler
 };
 
+static void midi_in_message_handler(int device_id, uint8_t *data)
+{
+	(void)device_id;
+	switch (data[1]>>4) {
+	case 8:
+		LOG_PRINTF("\r\nNote Off");
+		break;
+
+	case 9:
+		LOG_PRINTF("\r\nNote On");
+		break;
+
+	default:
+		break;
+	}
+}
+
+const midi_config_t midi_config = {
+	.read_callback = &midi_in_message_handler
+};
+
 int main(void)
 {
 	clock_setup();
@@ -180,6 +203,7 @@ int main(void)
 	hid_mouse_driver_init(&mouse_config);
 	hub_driver_init();
 	gp_xbox_driver_init(&gp_xbox_config);
+	midi_driver_init(&midi_config);
 
 	gpio_set(GPIOD,  GPIO13);
 

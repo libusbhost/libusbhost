@@ -2,7 +2,7 @@
  * This file is part of the libusbhost library
  * hosted at http://github.com/libusbhost/libusbhost
  *
- * Copyright (C) 2015 Amir Hammad <amir.hammad@hotmail.com>
+ * Copyright (C) 2016 Amir Hammad <amir.hammad@hotmail.com>
  *
  *
  * libusbhost is free software: you can redistribute it and/or modify
@@ -20,43 +20,33 @@
  *
  */
 
-#ifndef USBH_CONFIG_
-#define USBH_CONFIG_
+#ifndef USBH_DRIVER_AC_MIDI_PRIVATE_
+#define USBH_DRIVER_AC_MIDI_PRIVATE_
+
+#include "driver/usbh_device_driver.h"
+#include "usbh_driver_ac_midi.h"
+
+#include <stdint.h>
 
 
+#define MIDI_INITIAL_DELAY 	(100000)
 
-// Max devices per hub
-#define USBH_HUB_MAX_DEVICES	(8)
-
-// Max number of hub instancies
-#define USBH_MAX_HUBS		(2)
-
-// Max devices
-#define USBH_MAX_DEVICES		(15)
-
-// Min: 128
-// Set this wisely
-#define BUFFER_ONE_BYTES	(2048)
-
-// MOUSE
-#define USBH_HID_MOUSE_MAX_DEVICES	(2)
-
-#define USBH_HID_MOUSE_BUFFER		(32)
-
-// MIDI
-// Maximal number of midi devices connected to whatever hub
-#define USBH_AC_MIDI_MAX_DEVICES	(4)
-
-#define USBH_AC_MIDI_BUFFER 	(64)
-
-// Gamepad XBOX
-#define USBH_GP_XBOX_MAX_DEVICES	(2)
-
-#define USBH_GP_XBOX_BUFFER		(32)
-
-/* Sanity checks */
-#if (USBH_MAX_DEVICES > 127)
-#error USBH_MAX_DEVICES > 127
-#endif
-
+struct _midi_device {
+	usbh_device_t *usbh_device;
+	uint8_t buffer[USBH_AC_MIDI_BUFFER];
+	uint16_t endpoint_in_maxpacketsize;
+	uint16_t endpoint_out_maxpacketsize;
+	uint8_t endpoint_in_address;
+	uint8_t endpoint_out_address;
+	uint8_t state;
+	uint8_t endpoint_in_toggle;
+	uint8_t endpoint_out_toggle;
+	uint8_t device_id;
+	bool sending;
+	midi_write_callback_t write_callback_user;
+	usbh_packet_t write_packet;
+	// Timestamp at sending config command
+	uint32_t time_us_config;
+};
+typedef struct _midi_device midi_device_t;
 #endif

@@ -29,6 +29,7 @@ Native device drivers (mostly for demonstration purposes):
 - HUB
 - Gamepad - XBox compatible Controller
 - mouse (draft: only displays raw data)
+- USB MIDI devices (raw data + note on/off)
 
 ###Practical info
 
