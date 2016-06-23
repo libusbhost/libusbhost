@@ -30,7 +30,8 @@
 BEGIN_DECLS
 
 // pass this to usbh init
-extern const void *usbh_lld_stm32f4_drivers[];
+extern const void *usbh_lld_stm32f4_driver_fs;
+extern const void *usbh_lld_stm32f4_driver_hs;
 
 #ifdef USART_DEBUG
 void print_channels(const void *drvdata);

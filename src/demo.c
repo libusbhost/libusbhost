@@ -214,7 +214,12 @@ int main(void)
 	 *
 	 * Pass array of supported device drivers
 	 */
-	usbh_init(usbh_lld_stm32f4_drivers, device_drivers);
+	const void *lld_drivers[] = {
+		&usbh_lld_stm32f4_driver_fs, // Make sure USE_STM32F4_USBH_DRIVER_FS is defined in usbh_config.h
+//		&usbh_lld_stm32f4_driver_hs, // Make sure USE_STM32F4_USBH_DRIVER_HS is defined in usbh_config.h
+		0
+	};
+	usbh_init(lld_drivers, device_drivers);
 	gpio_clear(GPIOD,  GPIO13);
 
 	LOG_PRINTF("USB init complete\n");

@@ -1025,6 +1025,7 @@ static const usbh_driver_t driver_fs = {
 	.root_speed = root_speed,
 	.driver_data = &driver_data_fs
 };
+const void *usbh_lld_stm32f4_driver_fs = &driver_fs;
 #endif
 
 // USB High Speed - OTG_HS
@@ -1044,15 +1045,5 @@ static const usbh_driver_t driver_hs = {
 	.root_speed = root_speed,
 	.driver_data = &driver_data_hs
 };
+const void *usbh_lld_stm32f4_driver_hs = &driver_hs;
 #endif
-
-const void *usbh_lld_stm32f4_drivers[] = {
-#if defined(USE_STM32F4_USBH_DRIVER_FS)
-	&driver_fs,
-#endif
-
-#if defined(USE_STM32F4_USBH_DRIVER_HS)
-	&driver_hs,
-#endif
-	0
-};
