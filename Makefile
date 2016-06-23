@@ -101,6 +101,8 @@ OBJS = $(filter-out $(BINARY).o, $(OBJSDEMO))
 ifndef USART_DEBUG
 OBJS := $(filter-out build/usart_helpers.o, $(OBJS))
 OBJSDEMO := $(filter-out build/usart_helpers.o, $(OBJSDEMO))
+else
+$(info compiling with DEBUG functions)
 endif
 
 

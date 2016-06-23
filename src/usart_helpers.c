@@ -31,33 +31,6 @@
 #include <libopencm3/stm32/gpio.h>
 
 
-#ifndef USART_DEBUG
-
-void usart_init(uint32_t usart, uint32_t baudrate)
-{
-	(void)usart;
-	(void)baudrate;
-}
-void usart_printf(const char *str, ...)
-{
-	(void)str;
-}
-void usart_vprintf(const char *str, va_list va)
-{
-	(void)va;
-	(void)str;
-}
-void usart_fifo_send(void){}
-
-void usart_call_cmd(struct usart_commands * commands)
-{
-	(void)commands;
-}
-void usart_interrupt(void){}
-
-#else
-#warning compiling with debug functions
-
 #define USART_FIFO_OUT_SIZE (4096)
 uint8_t usart_fifo_out_data[USART_FIFO_OUT_SIZE];
 uint32_t usart_fifo_out_len = 0;
@@ -283,5 +256,3 @@ void usart_call_cmd(struct usart_commands * commands)
 	command_argindex = 0;
 	LOG_PRINTF("INVALID COMMAND\n>>");
 }
-
-#endif
