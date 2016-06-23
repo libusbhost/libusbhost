@@ -210,7 +210,7 @@ int main(void)
 	/**
 	 * Pass array of supported low level drivers
 	 * In case of stm32f407, there are up to two supported OTG hosts on one chip.
-	 * Each one can be enabled or disabled in config.mk - optimization for speed
+	 * Each one can be enabled or disabled in usbh_config.h - optimization for speed
 	 *
 	 * Pass array of supported device drivers
 	 */

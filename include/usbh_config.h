@@ -59,4 +59,10 @@
 #error USBH_MAX_DEVICES > 127
 #endif
 
+// Uncomment to enable OTG_HS support - low level driver
+// #define USE_STM32F4_USBH_DRIVER_HS
+
+// Uncomment to enable OTG_FS support - low level driver
+#define USE_STM32F4_USBH_DRIVER_FS
+
 #endif

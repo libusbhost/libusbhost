@@ -45,7 +45,7 @@ fetch libopencm3 submodule and compile needed libraries
 
 **How to compile demo**
 
-Edit config.mk for library configuration (By default Full speed OTG periphery on stm32f4 is supported)
+Edit usbh_config.h to configure the library (By default Full speed OTG periphery on stm32f4 is supported)
 
 
 > ./compileDemo.sh
