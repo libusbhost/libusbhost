@@ -98,6 +98,11 @@ SRCS := $(sort $(notdir $(wildcard $(SRCDIR)/*.cpp)))
 OBJSDEMO += $(patsubst %.cpp, build/%.o ,$(SRCS))
 OBJS = $(filter-out $(BINARY).o, $(OBJSDEMO))
 
+ifndef USART_DEBUG
+OBJS := $(filter-out build/usart_helpers.o, $(OBJS))
+OBJSDEMO := $(filter-out build/usart_helpers.o, $(OBJSDEMO))
+endif
+
 
 INCLUDE_DIR	= $(OPENCM3_DIR)/include 
 LIB_DIR		= $(OPENCM3_DIR)/lib
