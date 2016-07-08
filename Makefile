@@ -160,6 +160,8 @@ LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 
 all: elf bin lib
+doc:
+	doxygen
 	
 elf: $(BINARY).elf
 bin: $(BINARY).bin
@@ -257,7 +259,7 @@ else
 		   $(*).elf
 endif
 
-.PHONY: images clean stylecheck styleclean elf bin hex srec list testing
+.PHONY: images clean stylecheck styleclean elf bin hex srec list testing doc
 
 -include $(OBJS:.o=.d)
 build/lib$(LIBUSBHOSTNAME).a:	$(OBJS)

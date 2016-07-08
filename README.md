@@ -42,6 +42,9 @@ Native device drivers (mostly for demonstration purposes):
 
 fetch libopencm3 submodule and compile needed libraries
 
+**How to generate documentation**
+
+> make doc
 
 **How to compile demo**
 
