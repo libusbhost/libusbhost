@@ -21,7 +21,7 @@
  */
 
 #include "usart_helpers.h"			/// provides LOG_PRINTF macros used for debugging
-#include "usbh_hubbed.h"			/// provides usbh_init() and usbh_poll()
+#include "usbh_core.h"				/// provides usbh_init() and usbh_poll()
 #include "usbh_lld_stm32f4.h"		/// provides low level usb host driver for stm32f4 platform
 #include "usbh_driver_hid_mouse.h"	/// provides usb device driver Human Interface Device - type mouse
 #include "usbh_driver_hub.h"		/// provides usb full speed hub driver (Low speed devices on hub are not supported)

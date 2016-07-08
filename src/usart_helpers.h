@@ -23,7 +23,7 @@
 #ifndef USBH_USART_HELPERS_H
 #define USBH_USART_HELPERS_H
 
-#include "usbh_hubbed.h"
+#include "usbh_core.h"
 #include <stdint.h>
 #include <stdarg.h>
 

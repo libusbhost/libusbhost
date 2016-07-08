@@ -23,7 +23,7 @@
 #ifndef USBH_LLD_STM32F4_H_
 #define USBH_LLD_STM32F4_H_
 
-#include "usbh_hubbed.h"
+#include "usbh_core.h"
 
 #include <stdint.h>
 

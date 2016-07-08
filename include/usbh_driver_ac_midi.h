@@ -23,7 +23,7 @@
 #ifndef USBH_DRIVER_AC_MIDI_
 #define USBH_DRIVER_AC_MIDI_
 
-#include "usbh_hubbed.h"
+#include "usbh_core.h"
 
 #include <stdint.h>
 

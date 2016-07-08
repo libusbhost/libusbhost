@@ -24,7 +24,7 @@
 #define USBH_DEVICE_DRIVER_
 
 #include "usbh_config.h"
-#include "usbh_hubbed.h"
+#include "usbh_core.h"
 
 #include <stdint.h>
 

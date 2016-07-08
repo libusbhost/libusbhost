@@ -23,7 +23,7 @@
 #ifndef USBH_DRIVER_HUB_
 #define USBH_DRIVER_HUB_
 
-#include "usbh_hubbed.h"
+#include "usbh_core.h"
 
 BEGIN_DECLS
 

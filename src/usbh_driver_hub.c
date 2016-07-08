@@ -764,7 +764,7 @@ static void read_ep1(void *drvdata)
 }
 
 /**
- * \param time_curr_us - monotically rising time (see usbh_hubbed.h)
+ * @param time_curr_us - monotically rising time (@see usbh_poll())
  *		unit is microseconds
  */
 static void poll(void *drvdata, uint32_t time_curr_us)

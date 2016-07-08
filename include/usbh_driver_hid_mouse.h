@@ -23,7 +23,7 @@
 #ifndef USBH_DRIVER_HID_MOUSE_
 #define USBH_DRIVER_HID_MOUSE_
 
-#include "usbh_hubbed.h"
+#include "usbh_core.h"
 
 #include <stdint.h>
 

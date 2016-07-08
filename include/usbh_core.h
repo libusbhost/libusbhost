@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef USBH_HUBBED_
-#define USBH_HUBBED_
+#ifndef USBH_CORE_
+#define USBH_CORE_
 
 #include "usbh_config.h"
 
@@ -117,4 +117,4 @@ void usbh_poll(uint32_t time_curr_us);
 
 END_DECLS
 
-#endif
+#endif // USBH_CORE_

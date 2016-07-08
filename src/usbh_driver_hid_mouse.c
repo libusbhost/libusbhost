@@ -20,7 +20,7 @@
  *
  */
 
-#include "usbh_hubbed.h"
+#include "usbh_core.h"
 #include "driver/usbh_device_driver.h"
 #include "usbh_driver_hid_mouse.h"
 #include "usart_helpers.h"
@@ -232,7 +232,7 @@ static void read_mouse_in(void *drvdata)
 }
 
 /**
- * \param time_curr_us - monotically rising time (see usbh_hubbed.h)
+ * @param time_curr_us - monotically rising time (@see usbh_poll())
  *		unit is microseconds
  */
 static void poll(void *drvdata, uint32_t time_curr_us)

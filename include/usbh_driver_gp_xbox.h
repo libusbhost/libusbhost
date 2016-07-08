@@ -23,7 +23,7 @@
 #ifndef USBH_DRIVER_GP_XBOX_
 #define USBH_DRIVER_GP_XBOX_
 
-#include "usbh_hubbed.h"
+#include "usbh_core.h"
 
 #include <stdint.h>
 
