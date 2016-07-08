@@ -56,20 +56,49 @@ enum USBH_POLL_STATUS {
 	USBH_POLL_STATUS_DEVICE_DISCONNECTED
 };
 
+/**
+ * @brief The _usbh_device struct
+ *
+ * This represents exactly one connected device.
+ */
 struct _usbh_device {
+	/// max packet size for control endpoint(0)
 	uint16_t packet_size_max0;
+
+	/// Device's address
 	int8_t address;
-	enum USBH_SPEED speed;		// (USBH_SPEED_*)
-	uint8_t state; // for enumeration purposes
+
+	/// @see USBH_SPEED
+	enum USBH_SPEED speed;
+
+	/// state used for enumeration purposes
+	uint8_t state;
+
+	/// toggle bit
 	uint8_t toggle0;
+
+	/**
+	 * @brief drv - device driver used for this connected device
+	 */
+
 	const usbh_dev_driver_t *drv;
+	/**
+	 * @brief drvdata - device driver's private data
+	 */
 	void *drvdata;
+
+	/**
+	 * @brief lld - pointer to a low-level driver's instance
+	 */
 	const void *lld;
 };
 typedef struct _usbh_device usbh_device_t;
 
 struct _usbh_packet_callback_data {
+	/// status - it is used for reporting of the errors
 	enum USBH_PACKET_CALLBACK_STATUS status;
+
+	/// count of bytes that has been actually transferred
 	uint32_t transferred_length;
 };
 typedef struct _usbh_packet_callback_data usbh_packet_callback_data_t;
@@ -77,27 +106,76 @@ typedef struct _usbh_packet_callback_data usbh_packet_callback_data_t;
 typedef void (*usbh_packet_callback_t)(usbh_device_t *dev, usbh_packet_callback_data_t status);
 
 struct _usbh_packet {
-	void *data;		// Pointer to data
-	uint16_t datalen;	// Data length 0..1023
-	int8_t address;	// Device address
-	uint8_t endpoint_type;		// Endpoint type (see USBH_EPTYP_*)
-	uint8_t endpoint_address;		// Endpoint number 0..15
-	uint16_t endpoint_size_max;	// Max packet size for an endpoint
-	enum USBH_SPEED speed;		// (USBH_SPEED_*)
+	/// pointer to data
+	void *data;
+
+	/// length of the data (up to 1023)
+	uint16_t datalen;
+
+	/// Device's address
+	int8_t address;
+
+	/// Endpoint type (see USBH_ENDPOINT_TYPE_*)
+	uint8_t endpoint_type;
+
+	/// Endpoint number 0..15
+	uint8_t endpoint_address;
+
+	/// Max packet size for an endpoint
+	uint16_t endpoint_size_max;
+
+	/// @see USBH_SPEED
+	enum USBH_SPEED speed;
 	uint8_t *toggle;
+
+	/**
+	 * @brief callback this will be called when the packet is finished - either successfuly or not.
+	 */
 	usbh_packet_callback_t callback;
+
+	/**
+	 * @brief callback_arg argument passed into callback
+	 *
+	 * Low level driver is not allowed to alter the data pointed by callback_arg
+	 */
 	void *callback_arg;
 };
 typedef struct _usbh_packet usbh_packet_t;
 
 struct _usbh_driver {
+	/**
+	 * @brief init initialization routine of the low-level driver
+	 *
+	 *
+	 * This function is called during the initialization of the library(@see usbh_init())
+	 */
 	void (*init)(void *drvdata);
+
+	/**
+	 * write - perform a write to a device (@see usbh_packet_t)
+	 */
 	void (*write)(void *drvdata, const usbh_packet_t *packet);
+
+	/**
+	 * @brief read - perform a read from a device (@see usbh_packet_t)
+	 */
 	void (*read)(void *drvdata, usbh_packet_t *packet);
+
+	/**
+	 * @brief this is called as a part of @ref usbh_poll() routine
+	 */
 	enum USBH_POLL_STATUS (*poll)(void *drvdata, uint32_t time_curr_us);
 
-	// Pointer to Low-level driver data
+	/**
+	 * @brief speed of the low-level bus
+	 */
 	enum USBH_SPEED (*root_speed)(void *drvdata);
+
+	/**
+	 * @brief Pointer to Low-level driver data
+	 *
+	 * Data pointed by this pointer should not be altered by the logic other from low-level driver's logic
+	 */
 	void *driver_data;
 };
 typedef struct _usbh_driver usbh_driver_t;

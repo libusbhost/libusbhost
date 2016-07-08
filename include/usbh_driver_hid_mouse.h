@@ -30,10 +30,19 @@
 BEGIN_DECLS
 
 struct _hid_mouse_config {
+	/**
+	 * @brief this is called when some data is read when polling the device
+	 * @param device_id
+	 * @param data pointer to the data (only 4 bytes are valid!)
+	 */
 	void (*mouse_in_message_handler)(uint8_t device_id, const uint8_t *data);
 };
 typedef struct _hid_mouse_config hid_mouse_config_t;
 
+/**
+ * @brief hid_mouse_driver_init initialization routine - this will initialize internal structures of this device driver
+ * @param config
+ */
 void hid_mouse_driver_init(const hid_mouse_config_t *config);
 
 extern const usbh_dev_driver_t usbh_hid_mouse_driver;

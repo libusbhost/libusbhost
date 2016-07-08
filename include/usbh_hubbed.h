@@ -40,7 +40,7 @@
 
 BEGIN_DECLS
 
-// set to -1 to unused items
+/// set to -1 for unused items ("don't care" functionality) @see find_driver()
 struct _usbh_dev_driver_info {
 	int32_t deviceClass;
 	int32_t deviceSubClass;
@@ -54,22 +54,63 @@ struct _usbh_dev_driver_info {
 typedef struct _usbh_dev_driver_info usbh_dev_driver_info_t;
 
 struct _usbh_dev_driver {
+	/**
+	 * @brief init is initialization routine of the device driver
+	 *
+	 * This function is called during the initialization of the device driver
+	 */
 	void *(*init)(void *usbh_dev);
-	bool (*analyze_descriptor)(void *drv, void *descriptor);
+
+	/**
+	 * @brief analyze descriptor
+	 * @param[in/out] drvdata is the device driver's private data
+	 * @param[in] descriptor is the pointer to the descriptor that should
+	 *		be parsed in order to prepare driver to be loaded
+	 *
+	 * @retval true when the enumeration is complete and the driver is ready to be used
+	 * @retval false when the device driver is not ready to be used
+	 *
+	 * This should be used for getting correct endpoint numbers, getting maximum sizes of endpoints.
+	 * Should return true, when no more data is needed.
+	 *
+	 */
+	bool (*analyze_descriptor)(void *drvdata, void *descriptor);
+
+	/**
+	 * @brief poll method is called periodically by the library core (@see usbh_poll())
+	 * @param[in/out] drvdata is the device driver's private data
+	 * @param[in] time_curr_us current timestamp in microseconds
+	 */
 	void (*poll)(void *drvdata, uint32_t time_curr_us);
+
+	/**
+	 * @brief unloads the device driver
+	 * @param[in/out] drvdata is the device driver's private data
+	 *
+	 * This should free any data associated with this device
+	 */
 	void (*remove)(void *drvdata);
+
+	/**
+	 * @brief info - compatibility information about the driver. It is used by the core during device enumeration (@see find_driver())
+	 */
 	const usbh_dev_driver_info_t * const info;
 };
 typedef struct _usbh_dev_driver usbh_dev_driver_t;
 
-void usbh_init(const void *drivers[], const usbh_dev_driver_t * const device_drivers[]);
+/**
+ * @brief usbh_init
+ * @param low_level_drivers list of the low level drivers to be used by this library
+ * @param device_drivers list of the device drivers that could be used with attached devices
+ */
+void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const device_drivers[]);
 
 /**
- * \brief usbh_poll
- * \param time_curr_us - use monotically rising time
+ * @brief usbh_poll
+ * @param time_curr_us - use monotically rising time
  *
  *	time_curr_us:
- *		* can overflow, in time of this writing, after 1s)
+ *		* can overflow, in time of this writing, after 1s
  *		* unit is microseconds
  */
 void usbh_poll(uint32_t time_curr_us);

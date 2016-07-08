@@ -163,13 +163,13 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 	LOG_PRINTF("Device NOT Initialized\n");
 }
 
-void usbh_init(const void *drivers_lld[], const usbh_dev_driver_t * const device_drivers[])
+void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const device_drivers[])
 {
-	if (!drivers_lld) {
+	if (!low_level_drivers) {
 		return;
 	}
 
-	usbh_data.lld_drivers = (const usbh_driver_t **)drivers_lld;
+	usbh_data.lld_drivers = (const usbh_driver_t **)low_level_drivers;
 	usbh_data.dev_drivers = device_drivers;
 
 	// TODO: init structures

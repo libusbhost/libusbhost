@@ -36,9 +36,24 @@ struct _midi_config {
 };
 typedef struct _midi_config midi_config_t;
 
-typedef void (*midi_write_callback_t)(uint8_t);
+/**
+ * @param bytes_written count of bytes that were actually written
+ */
+typedef void (*midi_write_callback_t)(uint8_t bytes_written);
 
+/**
+ * @brief midi_driver_init initialization routine - this will initialize internal structures of this device driver
+ * @param config
+ */
 void midi_driver_init(const midi_config_t *config);
+
+/**
+ * @brief usbh_midi_write
+ * @param device_id
+ * @param data
+ * @param length
+ * @param callback this is called when the write call finishes
+ */
 void usbh_midi_write(uint8_t device_id, const void *data, uint32_t length, midi_write_callback_t callback);
 
 extern const usbh_dev_driver_t usbh_midi_driver;

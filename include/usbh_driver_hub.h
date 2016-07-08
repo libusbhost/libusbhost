@@ -27,6 +27,9 @@
 
 BEGIN_DECLS
 
+/**
+ * @brief hub_driver_init initialization routine - this will initialize internal structures of this device driver
+ */
 void hub_driver_init(void);
 
 extern const usbh_dev_driver_t usbh_hub_driver;
