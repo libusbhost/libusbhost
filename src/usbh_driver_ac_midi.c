@@ -246,7 +246,7 @@ static void read_midi_in(void *drvdata, const uint8_t nextstate)
 	packet.datalen = midi->endpoint_in_maxpacketsize;
 	packet.endpoint_address = midi->endpoint_in_address;
 	packet.endpoint_size_max = midi->endpoint_in_maxpacketsize;
-	packet.endpoint_type = USBH_EPTYP_BULK;
+	packet.endpoint_type = USBH_ENDPOINT_TYPE_BULK;
 	packet.speed = midi->usbh_device->speed;
 	packet.callback = event;
 	packet.callback_arg = midi->usbh_device;
@@ -367,7 +367,7 @@ void usbh_midi_write(uint8_t device_id, const void *data, uint32_t length, midi_
 	midi->write_packet.address = dev->address;
 	midi->write_packet.endpoint_address = midi->endpoint_out_address;
 	midi->write_packet.endpoint_size_max = midi->endpoint_out_maxpacketsize;
-	midi->write_packet.endpoint_type = USBH_EPTYP_BULK;
+	midi->write_packet.endpoint_type = USBH_ENDPOINT_TYPE_BULK;
 	midi->write_packet.speed = dev->speed;
 	midi->write_packet.callback = write_callback;
 	midi->write_packet.callback_arg = midi->usbh_device;

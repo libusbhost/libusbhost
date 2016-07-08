@@ -153,18 +153,18 @@ static void stm32f4_usbh_port_channel_setup(
 
 	// TODO: maybe to function
 	switch (eptyp) {
-	case USBH_EPTYP_CONTROL:
+	case USBH_ENDPOINT_TYPE_CONTROL:
 		eptyp = OTG_HCCHAR_EPTYP_CONTROL;
 		break;
-	case USBH_EPTYP_BULK:
+	case USBH_ENDPOINT_TYPE_BULK:
 		eptyp = OTG_HCCHAR_EPTYP_BULK;
 		break;
-	case USBH_EPTYP_INTERRUPT:
+	case USBH_ENDPOINT_TYPE_INTERRUPT:
 		// Use bulk transfer also for interrupt, since no difference is on protocol layer
 		// Except different behaviour of the core
 		eptyp = OTG_HCCHAR_EPTYP_BULK;
 		break;
-	case USBH_EPTYP_ISOCHRONOUS:
+	case USBH_ENDPOINT_TYPE_ISOCHRONOUS:
 		eptyp = OTG_HCCHAR_EPTYP_ISOCHRONOUS;
 		break;
 	default:
@@ -260,16 +260,16 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 	channels[channel].packet = *packet;
 
 	uint32_t dpid;
-	if (packet->endpoint_type == USBH_EPTYP_CONTROL) {
+	if (packet->endpoint_type == USBH_ENDPOINT_TYPE_CONTROL) {
 		dpid = OTG_HCTSIZ_DPID_MDATA;
 		packet->toggle[0] = 0;
-	} else if(packet->endpoint_type == USBH_EPTYP_INTERRUPT) {
+	} else if(packet->endpoint_type == USBH_ENDPOINT_TYPE_INTERRUPT) {
 		if (packet->toggle[0]) {
 			dpid = OTG_HCTSIZ_DPID_DATA1;
 		} else {
 			dpid = OTG_HCTSIZ_DPID_DATA0;
 		}
-	} else if (packet->endpoint_type == USBH_EPTYP_BULK) {
+	} else if (packet->endpoint_type == USBH_ENDPOINT_TYPE_BULK) {
 		if (packet->toggle[0]) {
 			dpid = OTG_HCTSIZ_DPID_DATA1;
 		} else {
@@ -295,8 +295,8 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 									OTG_HCCHAR_EPDIR_OUT,
 									packet->endpoint_size_max);
 
-	if (packet->endpoint_type == USBH_EPTYP_CONTROL ||
-		packet->endpoint_type == USBH_EPTYP_BULK) {
+	if (packet->endpoint_type == USBH_ENDPOINT_TYPE_CONTROL ||
+		packet->endpoint_type == USBH_ENDPOINT_TYPE_BULK) {
 
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) + RX_FIFO_SIZE;
 		const uint32_t * buf32 = packet->data;
@@ -517,7 +517,7 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 				if (hcint & OTG_HCINT_ACK) {
 					REBASE_CH(OTG_HCINT, channel) = OTG_HCINT_ACK;
 					LOG_PRINTF("ACK");
-					if (eptyp == USBH_EPTYP_CONTROL) {
+					if (eptyp == USBH_ENDPOINT_TYPE_CONTROL) {
 						channels[channel].packet.toggle[0] = 1;
 					} else {
 						channels[channel].packet.toggle[0] ^= 1;
@@ -597,7 +597,7 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 
 				if (hcint & OTG_HCINT_NAK) {
 					REBASE_CH(OTG_HCINT, channel) = OTG_HCINT_NAK;
-					if (eptyp == USBH_EPTYP_CONTROL) {
+					if (eptyp == USBH_ENDPOINT_TYPE_CONTROL) {
 						 LOG_PRINTF("NAK");
 					}
 
@@ -972,7 +972,7 @@ static void channels_init(void *drvdata)
  * Get speed of connected device
  *
  */
-static uint8_t root_speed(void *drvdata)
+static enum USBH_SPEED root_speed(void *drvdata)
 {
 	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
 	(void)dev;

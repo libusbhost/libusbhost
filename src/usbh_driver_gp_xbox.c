@@ -330,7 +330,7 @@ static void read_gp_xbox_in(gp_xbox_device_t *gp_xbox)
 	packet.datalen = gp_xbox->endpoint_in_maxpacketsize;
 	packet.endpoint_address = gp_xbox->endpoint_in_address;
 	packet.endpoint_size_max = gp_xbox->endpoint_in_maxpacketsize;
-	packet.endpoint_type = USBH_EPTYP_INTERRUPT;
+	packet.endpoint_type = USBH_ENDPOINT_TYPE_INTERRUPT;
 	packet.speed = gp_xbox->usbh_device->speed;
 	packet.callback = event;
 	packet.callback_arg = gp_xbox->usbh_device;

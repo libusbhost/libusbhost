@@ -207,7 +207,7 @@ void device_xfer_control_write(void *data, uint16_t datalen, usbh_packet_callbac
 	packet.address = dev->address;
 	packet.endpoint_address = 0;
 	packet.endpoint_size_max = dev->packet_size_max0;
-	packet.endpoint_type = USBH_EPTYP_CONTROL;
+	packet.endpoint_type = USBH_ENDPOINT_TYPE_CONTROL;
 	packet.speed = dev->speed;
 	packet.callback = callback;
 	packet.callback_arg = dev;
@@ -226,7 +226,7 @@ void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback
 	packet.address = dev->address;
 	packet.endpoint_address = 0;
 	packet.endpoint_size_max = dev->packet_size_max0;
-	packet.endpoint_type = USBH_EPTYP_CONTROL;
+	packet.endpoint_type = USBH_ENDPOINT_TYPE_CONTROL;
 	packet.speed = dev->speed;
 	packet.callback = callback;
 	packet.callback_arg = dev;

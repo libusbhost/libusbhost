@@ -30,15 +30,18 @@
 
 BEGIN_DECLS
 
-#define USBH_EPTYP_CONTROL				(0)
-#define USBH_EPTYP_ISOCHRONOUS 			(1)
-#define USBH_EPTYP_BULK					(2)
-#define USBH_EPTYP_INTERRUPT 			(3)
+enum USBH_ENDPOINT_TYPE {
+	USBH_ENDPOINT_TYPE_CONTROL = 0,
+	USBH_ENDPOINT_TYPE_ISOCHRONOUS = 1,
+	USBH_ENDPOINT_TYPE_BULK = 2,
+	USBH_ENDPOINT_TYPE_INTERRUPT = 3,
+};
 
-#define USBH_SPEED_FULL					(0)
-#define USBH_SPEED_LOW					(1)
-#define USBH_SPEED_HIGH					(2)
-
+enum USBH_SPEED {
+	USBH_SPEED_FULL = 0,
+	USBH_SPEED_LOW = 1,
+	USBH_SPEED_HIGH = 2,
+};
 
 enum USBH_PACKET_CALLBACK_STATUS {
 	USBH_PACKET_CALLBACK_STATUS_OK = 0,
@@ -56,7 +59,7 @@ enum USBH_POLL_STATUS {
 struct _usbh_device {
 	uint16_t packet_size_max0;
 	int8_t address;
-	uint8_t speed;		// (USBH_SPEED_*)
+	enum USBH_SPEED speed;		// (USBH_SPEED_*)
 	uint8_t state; // for enumeration purposes
 	uint8_t toggle0;
 	const usbh_dev_driver_t *drv;
@@ -80,7 +83,7 @@ struct _usbh_packet {
 	uint8_t endpoint_type;		// Endpoint type (see USBH_EPTYP_*)
 	uint8_t endpoint_address;		// Endpoint number 0..15
 	uint16_t endpoint_size_max;	// Max packet size for an endpoint
-	uint8_t speed;		// (USBH_SPEED_*)
+	enum USBH_SPEED speed;		// (USBH_SPEED_*)
 	uint8_t *toggle;
 	usbh_packet_callback_t callback;
 	void *callback_arg;
@@ -92,9 +95,9 @@ struct _usbh_driver {
 	void (*write)(void *drvdata, const usbh_packet_t *packet);
 	void (*read)(void *drvdata, usbh_packet_t *packet);
 	enum USBH_POLL_STATUS (*poll)(void *drvdata, uint32_t time_curr_us);
-	uint8_t (*root_speed)(void *drvdata);
 
 	// Pointer to Low-level driver data
+	enum USBH_SPEED (*root_speed)(void *drvdata);
 	void *driver_data;
 };
 typedef struct _usbh_driver usbh_driver_t;

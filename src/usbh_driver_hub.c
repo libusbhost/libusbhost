@@ -751,7 +751,7 @@ static void read_ep1(void *drvdata)
 	packet.datalen = hub->endpoint_in_maxpacketsize;
 	packet.endpoint_address = hub->endpoint_in_address;
 	packet.endpoint_size_max = hub->endpoint_in_maxpacketsize;
-	packet.endpoint_type = USBH_EPTYP_INTERRUPT;
+	packet.endpoint_type = USBH_ENDPOINT_TYPE_INTERRUPT;
 	packet.speed = hub->device[0]->speed;
 	packet.callback = event;
 	packet.callback_arg = hub->device[0];
