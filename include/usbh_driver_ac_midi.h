@@ -44,6 +44,8 @@ typedef void (*midi_write_callback_t)(uint8_t bytes_written);
 /**
  * @brief midi_driver_init initialization routine - this will initialize internal structures of this device driver
  * @param config
+ *
+ * @see midi_config_t
  */
 void midi_driver_init(const midi_config_t *config);
 

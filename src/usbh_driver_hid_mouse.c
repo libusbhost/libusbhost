@@ -232,8 +232,9 @@ static void read_mouse_in(void *drvdata)
 }
 
 /**
- * @param time_curr_us - monotically rising time (@see usbh_poll())
+ * @param time_curr_us - monotically rising time
  *		unit is microseconds
+ * @see usbh_poll()
  */
 static void poll(void *drvdata, uint32_t time_curr_us)
 {

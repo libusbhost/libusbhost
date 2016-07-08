@@ -77,9 +77,10 @@ struct _usbh_dev_driver {
 	bool (*analyze_descriptor)(void *drvdata, void *descriptor);
 
 	/**
-	 * @brief poll method is called periodically by the library core (@see usbh_poll())
+	 * @brief poll method is called periodically by the library core
 	 * @param[in/out] drvdata is the device driver's private data
 	 * @param[in] time_curr_us current timestamp in microseconds
+	 * @see usbh_poll()
 	 */
 	void (*poll)(void *drvdata, uint32_t time_curr_us);
 
@@ -92,7 +93,8 @@ struct _usbh_dev_driver {
 	void (*remove)(void *drvdata);
 
 	/**
-	 * @brief info - compatibility information about the driver. It is used by the core during device enumeration (@see find_driver())
+	 * @brief info - compatibility information about the driver. It is used by the core during device enumeration
+	 * @see find_driver()
 	 */
 	const usbh_dev_driver_info_t * const info;
 };

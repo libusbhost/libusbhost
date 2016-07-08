@@ -67,7 +67,7 @@ typedef struct _gp_xbox_config gp_xbox_config_t;
 
 /**
  * @brief gp_xbox_driver_init initialization routine - this will initialize internal structures of this device driver
- * @param config
+ * @see gp_xbox_config_t
  */
 void gp_xbox_driver_init(const gp_xbox_config_t *config);
 

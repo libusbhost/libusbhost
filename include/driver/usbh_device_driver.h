@@ -115,7 +115,10 @@ struct _usbh_packet {
 	/// Device's address
 	int8_t address;
 
-	/// Endpoint type (see USBH_ENDPOINT_TYPE_*)
+	/**
+	 * @brief Endpoint type
+	 * @see USBH_ENDPOINT_TYPE
+	 */
 	uint8_t endpoint_type;
 
 	/// Endpoint number 0..15
@@ -147,17 +150,21 @@ struct _usbh_low_level_driver {
 	 * @brief init initialization routine of the low-level driver
 	 *
 	 *
-	 * This function is called during the initialization of the library(@see usbh_init())
+	 * This function is called during the initialization of the library
+	 *
+	 * @see usbh_init()
 	 */
 	void (*init)(void *drvdata);
 
 	/**
-	 * write - perform a write to a device (@see usbh_packet_t)
+	 * write - perform a write to a device
+	 * @see usbh_packet_t
 	 */
 	void (*write)(void *drvdata, const usbh_packet_t *packet);
 
 	/**
-	 * @brief read - perform a read from a device (@see usbh_packet_t)
+	 * @brief read - perform a read from a device
+	 * @see usbh_packet_t
 	 */
 	void (*read)(void *drvdata, usbh_packet_t *packet);
 
@@ -191,18 +198,17 @@ typedef struct _usbh_generic_data usbh_generic_data_t;
 							arg, __FILE__, __LINE__)
 
 
-/// Hub related functions
+/* Hub related functions */
 
 usbh_device_t *usbh_get_free_device(const usbh_device_t *dev);
 bool usbh_enum_available(void);
 void device_enumeration_start(usbh_device_t *dev);
 
-/// All devices functions
-
-///
+/* All devices functions */
 void usbh_read(usbh_device_t *dev, usbh_packet_t *packet);
 void usbh_write(usbh_device_t *dev, const usbh_packet_t *packet);
-/// Helper functions
+
+/* Helper functions used by device drivers */
 void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
 void device_xfer_control_write(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
 

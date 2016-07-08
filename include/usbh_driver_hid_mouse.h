@@ -42,6 +42,7 @@ typedef struct _hid_mouse_config hid_mouse_config_t;
 /**
  * @brief hid_mouse_driver_init initialization routine - this will initialize internal structures of this device driver
  * @param config
+ * @see hid_mouse_config_t
  */
 void hid_mouse_driver_init(const hid_mouse_config_t *config);
 
