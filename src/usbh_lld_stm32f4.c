@@ -277,7 +277,7 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 		}
 	} else {
 		dpid = OTG_HCTSIZ_DPID_DATA0; // ! TODO: BUG
-		LOG_PRINTF("BUG, %d",__LINE__);
+		ERROR("");
 	}
 
 	uint32_t num_packets;
