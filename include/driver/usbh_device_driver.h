@@ -142,7 +142,7 @@ struct _usbh_packet {
 };
 typedef struct _usbh_packet usbh_packet_t;
 
-struct _usbh_driver {
+struct _usbh_low_level_driver {
 	/**
 	 * @brief init initialization routine of the low-level driver
 	 *
@@ -178,7 +178,7 @@ struct _usbh_driver {
 	 */
 	void *driver_data;
 };
-typedef struct _usbh_driver usbh_driver_t;
+typedef struct _usbh_low_level_driver usbh_low_level_driver_t;
 
 struct _usbh_generic_data {
 	usbh_device_t usbh_device[USBH_MAX_DEVICES];

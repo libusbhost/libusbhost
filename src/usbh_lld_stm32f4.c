@@ -998,7 +998,7 @@ static enum USBH_SPEED root_speed(void *drvdata)
  */
 void print_channels(const void *lld)
 {
-	usbh_lld_stm32f4_driver_data_t *dev = ((usbh_driver_t *)lld)->driver_data;
+	usbh_lld_stm32f4_driver_data_t *dev = ((usbh_low_level_driver_t *)lld)->driver_data;
 	channel_t *channels = dev->channels;
 	int32_t i;
 	LOG_PRINTF("\nCHANNELS: \n");
@@ -1017,7 +1017,7 @@ static usbh_lld_stm32f4_driver_data_t driver_data_fs = {
 	.channels = channels_fs,
 	.num_channels = NUM_CHANNELS_FS
 };
-static const usbh_driver_t driver_fs = {
+static const usbh_low_level_driver_t driver_fs = {
 	.init = init,
 	.poll = poll,
 	.read = read,
@@ -1037,7 +1037,7 @@ static usbh_lld_stm32f4_driver_data_t driver_data_hs = {
 	.channels = channels_hs,
 	.num_channels = NUM_CHANNELS_HS
 };
-static const usbh_driver_t driver_hs = {
+static const usbh_low_level_driver_t driver_hs = {
 	.init = init,
 	.poll = poll,
 	.read = read,

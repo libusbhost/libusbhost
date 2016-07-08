@@ -30,7 +30,7 @@
 
 static struct {
 	bool enumeration_run;
-	const usbh_driver_t * const *lld_drivers;
+	const usbh_low_level_driver_t * const *lld_drivers;
 	const usbh_dev_driver_t * const *dev_drivers;
 	int8_t address_temporary;
 } usbh_data = {0};
@@ -169,7 +169,7 @@ void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const 
 		return;
 	}
 
-	usbh_data.lld_drivers = (const usbh_driver_t **)low_level_drivers;
+	usbh_data.lld_drivers = (const usbh_low_level_driver_t **)low_level_drivers;
 	usbh_data.dev_drivers = device_drivers;
 
 	// TODO: init structures
@@ -249,7 +249,7 @@ bool usbh_enum_available(void)
  */
 usbh_device_t *usbh_get_free_device(const usbh_device_t *dev)
 {
-	const usbh_driver_t *lld = dev->lld;
+	const usbh_low_level_driver_t *lld = dev->lld;
 	usbh_generic_data_t *lld_data = lld->driver_data;
 	usbh_device_t *usbh_device = lld_data->usbh_device;
 
@@ -281,7 +281,7 @@ static void device_enumeration_terminate(usbh_device_t *dev)
  */
 static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 {
-	const usbh_driver_t *lld = dev->lld;
+	const usbh_low_level_driver_t *lld = dev->lld;
 	usbh_generic_data_t *lld_data = lld->driver_data;
 	uint8_t *usbh_buffer = lld_data->usbh_buffer;
 	uint8_t state_start = dev->state; // Detection of hang
@@ -620,13 +620,13 @@ void usbh_poll(uint32_t time_curr_us)
 
 void usbh_read(usbh_device_t *dev, usbh_packet_t *packet)
 {
-	const usbh_driver_t *lld = dev->lld;
+	const usbh_low_level_driver_t *lld = dev->lld;
 	lld->read(lld->driver_data, packet);
 }
 
 void usbh_write(usbh_device_t *dev, const usbh_packet_t *packet)
 {
-	const usbh_driver_t *lld = dev->lld;
+	const usbh_low_level_driver_t *lld = dev->lld;
 	lld->write(lld->driver_data, packet);
 }
 
