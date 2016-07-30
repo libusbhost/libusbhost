@@ -99,7 +99,7 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 	usbh_dev_driver_info_t device_info;
 	if (desc_type == USB_DT_DEVICE) {
 		struct usb_device_descriptor *device_desc = (void*)&buf[i];
-		LOG_PRINTF("DEVICE DESCRIPTOR");
+		LOG_PRINTF("DEVICE DESCRIPTOR\n");
 		device_info.deviceClass = device_desc->bDeviceClass;
 		device_info.deviceSubClass = device_desc->bDeviceSubClass;
 		device_info.deviceProtocol = device_desc->bDeviceProtocol;
