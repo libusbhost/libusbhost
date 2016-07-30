@@ -522,7 +522,7 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 
 				if (hcint & OTG_HCINT_XFRC) {
 					REBASE_CH(OTG_HCINT, channel) = OTG_HCINT_XFRC;
-					LOG_PRINTF("XFRC");
+					LOG_PRINTF("XFRC\n");
 
 					free_channel(dev, channel);
 
@@ -618,7 +618,7 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 
 				if (hcint & OTG_HCINT_XFRC) {
 					REBASE_CH(OTG_HCINT, channel) = OTG_HCINT_XFRC;
-					LOG_PRINTF("XFRC");
+					LOG_PRINTF("XFRC\n");
 
 					free_channel(dev, channel);
 					usbh_packet_callback_data_t cb_data;
