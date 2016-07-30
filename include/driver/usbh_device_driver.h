@@ -56,6 +56,11 @@ enum USBH_POLL_STATUS {
 	USBH_POLL_STATUS_DEVICE_DISCONNECTED
 };
 
+enum USBH_CONTROL_TYPE {
+	USBH_CONTROL_TYPE_SETUP,
+	USBH_CONTROL_TYPE_DATA
+};
+
 /**
  * @brief The _usbh_device struct
  *
@@ -120,6 +125,8 @@ struct _usbh_packet {
 	 * @see USBH_ENDPOINT_TYPE
 	 */
 	uint8_t endpoint_type;
+
+	enum USBH_CONTROL_TYPE control_type;
 
 	/// Endpoint number 0..15
 	uint8_t endpoint_address;
@@ -210,7 +217,8 @@ void usbh_write(usbh_device_t *dev, const usbh_packet_t *packet);
 
 /* Helper functions used by device drivers */
 void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
-void device_xfer_control_write(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
+void device_xfer_control_write_setup(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
+void device_xfer_control_write_data(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
 
 
 END_DECLS

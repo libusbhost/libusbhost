@@ -261,20 +261,16 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 
 	uint32_t dpid;
 	if (packet->endpoint_type == USBH_ENDPOINT_TYPE_CONTROL) {
-		dpid = OTG_HCTSIZ_DPID_MDATA;
-		packet->toggle[0] = 0;
+		if (packet->control_type == USBH_CONTROL_TYPE_DATA) {
+			dpid = packet->toggle[0] ? OTG_HCTSIZ_DPID_DATA1 : OTG_HCTSIZ_DPID_DATA0;
+		} else {
+			dpid = OTG_HCTSIZ_DPID_MDATA;
+			packet->toggle[0] = 0;
+		}
 	} else if(packet->endpoint_type == USBH_ENDPOINT_TYPE_INTERRUPT) {
-		if (packet->toggle[0]) {
-			dpid = OTG_HCTSIZ_DPID_DATA1;
-		} else {
-			dpid = OTG_HCTSIZ_DPID_DATA0;
-		}
+		dpid = packet->toggle[0] ? OTG_HCTSIZ_DPID_DATA1 : OTG_HCTSIZ_DPID_DATA0;
 	} else if (packet->endpoint_type == USBH_ENDPOINT_TYPE_BULK) {
-		if (packet->toggle[0]) {
-			dpid = OTG_HCTSIZ_DPID_DATA1;
-		} else {
-			dpid = OTG_HCTSIZ_DPID_DATA0;
-		}
+		dpid = packet->toggle[0] ? OTG_HCTSIZ_DPID_DATA1 : OTG_HCTSIZ_DPID_DATA0;
 	} else {
 		dpid = OTG_HCTSIZ_DPID_DATA0; // ! TODO: BUG
 		ERROR("");

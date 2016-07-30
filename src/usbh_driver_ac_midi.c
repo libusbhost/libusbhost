@@ -308,7 +308,7 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 
 			midi->state++;
 
-			device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 		}
 		break;
 	}

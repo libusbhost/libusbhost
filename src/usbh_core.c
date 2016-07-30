@@ -198,7 +198,7 @@ void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const 
  * NEW ENUMERATE
  *
  */
-void device_xfer_control_write(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
+void device_xfer_control_write_setup(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
 {
 	usbh_packet_t packet;
 
@@ -208,13 +208,34 @@ void device_xfer_control_write(void *data, uint16_t datalen, usbh_packet_callbac
 	packet.endpoint_address = 0;
 	packet.endpoint_size_max = dev->packet_size_max0;
 	packet.endpoint_type = USBH_ENDPOINT_TYPE_CONTROL;
+	packet.control_type = USBH_CONTROL_TYPE_SETUP;
 	packet.speed = dev->speed;
 	packet.callback = callback;
 	packet.callback_arg = dev;
 	packet.toggle = &dev->toggle0;
 
 	usbh_write(dev, &packet);
-	LOG_PRINTF("WR@device...%d |  \n", dev->address);
+	LOG_PRINTF("WR-setup@device...%d \n", dev->address);
+}
+
+void device_xfer_control_write_data(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
+{
+	usbh_packet_t packet;
+
+	packet.data = data;
+	packet.datalen = datalen;
+	packet.address = dev->address;
+	packet.endpoint_address = 0;
+	packet.endpoint_size_max = dev->packet_size_max0;
+	packet.endpoint_type = USBH_ENDPOINT_TYPE_CONTROL;
+	packet.control_type = USBH_CONTROL_TYPE_DATA;
+	packet.speed = dev->speed;
+	packet.callback = callback;
+	packet.callback_arg = dev;
+	packet.toggle = &dev->toggle0;
+
+	usbh_write(dev, &packet);
+	LOG_PRINTF("WR-data@device...%d \n", dev->address);
 }
 
 void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
@@ -323,7 +344,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 			setup_data.wLength = USB_DT_DEVICE_SIZE;
 
 			dev->state++;
-			device_xfer_control_write(&setup_data, sizeof(setup_data),
+			device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
 				device_enumerate, dev);
 			break;
 
@@ -380,7 +401,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 					setup_data.wLength = ddt->bMaxPacketSize0;//USB_DT_CONFIGURATION_SIZE;
 
 					dev->state++;
-					device_xfer_control_write(&setup_data, sizeof(setup_data),
+					device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
 						device_enumerate, dev);
 				}
 				break;
@@ -443,7 +464,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 					setup_data.wLength = cdt->wTotalLength;
 
 					dev->state++;
-					device_xfer_control_write(&setup_data, sizeof(setup_data),
+					device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
 						device_enumerate, dev);
 				}
 				break;
@@ -558,7 +579,7 @@ void device_enumeration_start(usbh_device_t *dev)
 	setup_data.wIndex = 0;
 	setup_data.wLength = 0;
 
-	device_xfer_control_write(&setup_data, sizeof(setup_data),
+	device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
 		device_enumerate, dev);
 }
 

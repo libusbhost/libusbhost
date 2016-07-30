@@ -204,7 +204,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 				hub->current_port = port;
 				LOG_PRINTF("\n\nPORT FOUND: %d\n", port);
-				device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+				device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 			}
 			break;
 
@@ -265,7 +265,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					setup_data.wLength = hub->desc_len;
 
 					hub->state++;
-					device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 					LOG_PRINTF("DO Need to get HUB DESC\n");
 				}
 				break;
@@ -316,7 +316,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						setup_data.wLength = hub->desc_len;
 
 						hub->state = 4;
-						device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+						device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 						break;
 					} else if (hub_descriptor->head.bDescLength == hub->desc_len) {
 						hub->ports_num = hub_descriptor->head.bNbrPorts;
@@ -382,7 +382,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					hub->state_after_empty_read = hub->state;
 					hub->state = EMPTY_PACKET_READ_STATE;
 
-					device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 				} else {
 					hub->state++;
 					// TODO:
@@ -419,7 +419,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					setup_data.wLength = 4;
 
 					hub->state++;
-					device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 				}
 				break;
 
@@ -449,6 +449,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			}
 		}
 		break;
+
 	case 9:
 		{
 			switch (cb_data.status) {
@@ -464,7 +465,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 					hub->state++;
 
-					device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 				}
 				break;
 
@@ -476,6 +477,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			}
 		}
 		break;
+
 	case 10:
 		{
 			switch (cb_data.status) {
@@ -492,6 +494,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			}
 		}
 		break;
+
 	case 11:
 		{
 			switch (cb_data.status) {
@@ -582,7 +585,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							hub->state_after_empty_read = 33;
 							hub->state = EMPTY_PACKET_READ_STATE;
 
-							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 
 						} else if(stc & (1<<HUB_FEATURE_PORT_RESET)) {
 							// clear feature C_PORT_RESET
@@ -599,7 +602,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							hub->state = EMPTY_PACKET_READ_STATE;
 
 							LOG_PRINTF("RESET");
-							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 						} else {
 							LOG_PRINTF("another STC %d\n", stc);
 						}
@@ -643,7 +646,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							LOG_PRINTF("CONN");
 
 							hub->busy = 1;
-							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 						}
 					} else {
 						LOG_PRINTF("\t\t\t\tDISCONNECT EVENT\n");
@@ -707,7 +710,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							hub->state = EMPTY_PACKET_READ_STATE;
 
 							hub->current_port = CURRENT_PORT_NONE;
-							device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 						} else if (!(sts & (1<<(HUB_FEATURE_PORT_LOWSPEED))) &&
 							!(sts & (1<<(HUB_FEATURE_PORT_HIGHSPEED)))) {
 							hub->device[port]->speed = USBH_SPEED_FULL;
@@ -799,7 +802,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 
 			hub->state = EMPTY_PACKET_READ_STATE;
 			hub->state_after_empty_read = 3;
-			device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 
 		}
 		break;

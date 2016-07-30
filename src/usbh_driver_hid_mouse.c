@@ -261,7 +261,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 
 			mouse->state_next = STATE_SET_CONFIGURATION_EMPTY_READ;
 
-			device_xfer_control_write(&setup_data, sizeof(setup_data), event, dev);
+			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 		}
 		break;
 
