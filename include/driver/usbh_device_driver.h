@@ -124,7 +124,7 @@ struct _usbh_packet {
 	 * @brief Endpoint type
 	 * @see USBH_ENDPOINT_TYPE
 	 */
-	uint8_t endpoint_type;
+	enum USBH_ENDPOINT_TYPE endpoint_type;
 
 	enum USBH_CONTROL_TYPE control_type;
 
