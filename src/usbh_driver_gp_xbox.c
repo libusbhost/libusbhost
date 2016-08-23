@@ -77,7 +77,7 @@ void gp_xbox_driver_init(const gp_xbox_config_t *config)
 static void *init(void *usbh_dev)
 {
 	if (!initialized) {
-		LOG_PRINTF("\n%s/%d : driver not initialized\r\n", __FILE__, __LINE__);
+		LOG_PRINTF("\n%s/%d : driver not initialized\n", __FILE__, __LINE__);
 		return 0;
 	}
 

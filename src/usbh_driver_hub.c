@@ -53,7 +53,7 @@ void hub_driver_init(void)
 static void *init(void *usbh_dev)
 {
 	if (!initialized) {
-		LOG_PRINTF("\n%s/%d : driver not initialized\r\n", __FILE__, __LINE__);
+		LOG_PRINTF("\n%s/%d : driver not initialized\n", __FILE__, __LINE__);
 		return 0;
 	}
 
