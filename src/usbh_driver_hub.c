@@ -45,11 +45,6 @@ void hub_driver_init(void)
 	}
 }
 
-
-/**
- *
- *
- */
 static void *init(void *usbh_dev)
 {
 	if (!initialized) {
@@ -80,15 +75,11 @@ static void *init(void *usbh_dev)
 	drvdata->endpoint_in_address = 0;
 	drvdata->endpoint_in_maxpacketsize = 0;
 
-//	for (i = 1; i < USBH_MAX_HUBS + 1; i++) {
-//		drvdata->device[i]->address = 0;
-//		drvdata->device[i]->state = 0;
-//	}
 	return drvdata;
 }
 
 /**
- * Returns true if all needed data are parsed
+ * @returns true if all needed data are parsed
  */
 static bool analyze_descriptor(void *drvdata, void *descriptor)
 {
@@ -146,7 +137,6 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 // Enumerate
 static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 {
-	//~ usbh_device_t *dev = arg;
 	hub_device_t *hub = (hub_device_t *)dev->drvdata;
 
 	LOG_PRINTF("\nHUB->STATE = %d\n", hub->state);
@@ -194,8 +184,6 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					setup_data.bmRequestType = 0b10100000;
 				}
 
-
-				//~ LOG_PRINTF("port:%d", port);
 				setup_data.bRequest = USB_REQ_GET_STATUS;
 				setup_data.wValue = 0;
 				setup_data.wIndex = port;
@@ -532,7 +520,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					// (maybe whole library is affected by this)
 					// Detail:
 					// 	Isn't universal. Here is endianess ok,
-					// 	but on another architecture must not be
+					// 	but on another architecture may be incorrect
 					device_xfer_control_read(&hub->hub_and_port_status[port], 4, event, dev);
 				}
 				break;
