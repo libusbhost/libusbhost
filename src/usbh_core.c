@@ -337,7 +337,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 
 			struct usb_setup_data setup_data;
 
-			setup_data.bmRequestType = 0b10000000;
+			setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
 			setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
 			setup_data.wValue = USB_DT_DEVICE << 8;
 			setup_data.wIndex = 0;
@@ -394,7 +394,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 					dev->packet_size_max0 = ddt->bMaxPacketSize0;
 					struct usb_setup_data setup_data;
 
-					setup_data.bmRequestType = 0b10000000;
+					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
 					setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
 					setup_data.wValue = USB_DT_CONFIGURATION << 8;
 					setup_data.wIndex = 0;
@@ -457,7 +457,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 						(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
 					struct usb_setup_data setup_data;
 					LOG_PRINTF("WRITE: LEN: %d", cdt->wTotalLength);
-					setup_data.bmRequestType = 0b10000000;
+					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
 					setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
 					setup_data.wValue = USB_DT_CONFIGURATION << 8;
 					setup_data.wIndex = 0;
@@ -573,7 +573,7 @@ void device_enumeration_start(usbh_device_t *dev)
 
 	struct usb_setup_data setup_data;
 
-	setup_data.bmRequestType = 0b00000000;
+	setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
 	setup_data.bRequest = USB_REQ_SET_ADDRESS;
 	setup_data.wValue = address;
 	setup_data.wIndex = 0;

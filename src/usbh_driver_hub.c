@@ -179,9 +179,9 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				struct usb_setup_data setup_data;
 				// If regular port event, else hub event
 				if (port) {
-					setup_data.bmRequestType = 0b10100011;
+					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
 				} else {
-					setup_data.bmRequestType = 0b10100000;
+					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_DEVICE;
 				}
 
 				setup_data.bRequest = USB_REQ_GET_STATUS;
@@ -246,7 +246,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					struct usb_setup_data setup_data;
 					hub->desc_len = hub->device[0]->packet_size_max0;
 
-					setup_data.bmRequestType = 0b10100000;
+					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_DEVICE;
 					setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
 					setup_data.wValue = 0x29<<8;
 					setup_data.wIndex = 0;
@@ -297,7 +297,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						struct usb_setup_data setup_data;
 						hub->desc_len = hub_descriptor->head.bDescLength;
 
-						setup_data.bmRequestType = 0b10100000;
+						setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_DEVICE;
 						setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
 						setup_data.wValue = 0x29<<8;
 						setup_data.wIndex = 0;
@@ -361,7 +361,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					struct usb_setup_data setup_data;
 
 					LOG_PRINTF("[!%d!]",hub->index);
-					setup_data.bmRequestType = 0b00100011;
+					setup_data.bmRequestType = USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
 					setup_data.bRequest = HUB_REQ_SET_FEATURE;
 					setup_data.wValue = HUB_FEATURE_PORT_POWER;
 					setup_data.wIndex = hub->index;
@@ -400,7 +400,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				{
 					struct usb_setup_data setup_data;
 
-					setup_data.bmRequestType = 0b10100000;
+					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_DEVICE;
 					setup_data.bRequest = USB_REQ_GET_STATUS;
 					setup_data.wValue = 0;
 					setup_data.wIndex = 0;
@@ -445,7 +445,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				{
 					struct usb_setup_data setup_data;
 
-					setup_data.bmRequestType = 0b10100011;
+					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
 					setup_data.bRequest = USB_REQ_GET_STATUS;
 					setup_data.wValue = 0;
 					setup_data.wIndex = ++hub->index;
@@ -564,7 +564,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							// clear feature C_PORT_CONNECTION
 							struct usb_setup_data setup_data;
 
-							setup_data.bmRequestType = 0b00100011;
+							setup_data.bmRequestType = USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
 							setup_data.bRequest = HUB_REQ_CLEAR_FEATURE;
 							setup_data.wValue = HUB_FEATURE_C_PORT_CONNECTION;
 							setup_data.wIndex = port;
@@ -580,7 +580,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							// Reset processing is complete, enumerate device
 							struct usb_setup_data setup_data;
 
-							setup_data.bmRequestType = 0b00100011;
+							setup_data.bmRequestType = USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
 							setup_data.bRequest = HUB_REQ_CLEAR_FEATURE;
 							setup_data.wValue = HUB_FEATURE_C_PORT_RESET;
 							setup_data.wIndex = port;
@@ -622,7 +622,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						if ((stc) & (1<<HUB_FEATURE_PORT_CONNECTION)) {
 							struct usb_setup_data setup_data;
 
-							setup_data.bmRequestType = 0b00100011;
+							setup_data.bmRequestType = USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
 							setup_data.bRequest = HUB_REQ_SET_FEATURE;
 							setup_data.wValue = HUB_FEATURE_PORT_RESET;
 							setup_data.wIndex = port;
@@ -687,7 +687,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							// Disable Low speed device immediately
 							struct usb_setup_data setup_data;
 
-							setup_data.bmRequestType = 0b00100011;
+							setup_data.bmRequestType = USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
 							setup_data.bRequest = HUB_REQ_CLEAR_FEATURE;
 							setup_data.wValue = HUB_FEATURE_PORT_ENABLE;
 							setup_data.wIndex = port;
@@ -782,7 +782,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 			LOG_PRINTF("CFGVAL: %d\n", hub->buffer[0]);
 			struct usb_setup_data setup_data;
 
-			setup_data.bmRequestType = 0b00000000;
+			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
 			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
 			setup_data.wValue = hub->buffer[0];
 			setup_data.wIndex = 0;

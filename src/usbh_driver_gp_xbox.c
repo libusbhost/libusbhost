@@ -364,7 +364,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 		{
 			struct usb_setup_data setup_data;
 
-			setup_data.bmRequestType = 0b00000000;
+			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
 			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
 			setup_data.wValue = gp_xbox->configuration_value;
 			setup_data.wIndex = 0;

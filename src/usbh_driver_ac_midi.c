@@ -300,7 +300,7 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 			//~ LOG_PRINTF("CFGVAL: %d\n", dev->config_val);
 			struct usb_setup_data setup_data;
 
-			setup_data.bmRequestType = 0b00000000;
+			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
 			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
 			setup_data.wValue = midi->buffer[0];
 			setup_data.wIndex = 0;
