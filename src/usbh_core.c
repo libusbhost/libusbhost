@@ -53,7 +53,7 @@ static bool enumeration(void)
 /**
  *
  */
-static const usbh_dev_driver_t *find_driver(const usbh_dev_driver_info_t * device_info)
+static bool find_driver(usbh_device_t *dev, const usbh_dev_driver_info_t * device_info)
 {
 
 #define CHECK_PARTIAL_COMPATIBILITY(what) \
@@ -62,7 +62,6 @@ static const usbh_dev_driver_t *find_driver(const usbh_dev_driver_info_t * devic
 		i++;\
 		continue;\
 	}
-
 
 	int i = 0;
 
@@ -77,9 +76,16 @@ static const usbh_dev_driver_t *find_driver(const usbh_dev_driver_info_t * devic
 		CHECK_PARTIAL_COMPATIBILITY(idVendor);
 		CHECK_PARTIAL_COMPATIBILITY(idProduct);
 
-		return usbh_data.dev_drivers[i];
+		dev->drv = usbh_data.dev_drivers[i];
+		dev->drvdata = dev->drv->init(dev);
+		if (!dev->drvdata) {
+			LOG_PRINTF("Unable to initialize device driver at index %d\n", i);
+			i++;
+			continue;
+		}
+		return true;
 	}
-	return 0;
+	return false;
 #undef CHECK_PARTIAL_COMPATIBILITY
 }
 
@@ -122,14 +128,26 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 			device_info.ifaceClass = iface->bInterfaceClass;
 			device_info.ifaceSubClass = iface->bInterfaceSubClass;
 			device_info.ifaceProtocol = iface->bInterfaceProtocol;
-			const usbh_dev_driver_t *driver = find_driver(&device_info);
-			if (driver) {
-				dev->drv = driver;
-				dev->drvdata = dev->drv->init(dev);
-				if (!dev->drvdata) {
-					LOG_PRINTF("CANT TOUCH THIS");
+			if (find_driver(dev, &device_info)) {
+				int k = 0;
+				while (k < descriptors_len) {
+					desc_len = buf[k];
+					void *drvdata = dev->drvdata;
+					LOG_PRINTF("[%d]", buf[k+1]);
+					if (dev->drv->analyze_descriptor(drvdata, &buf[k])) {
+						LOG_PRINTF("Device Initialized\n");
+						return;
+					}
+
+					if (desc_len == 0) {
+						LOG_PRINTF("Problem occured while parsing complete configuration descriptor");
+						return;
+					}
+					k += desc_len;
 				}
-				break;
+				LOG_PRINTF("Device driver isn't compatible with this device\n");
+			} else {
+				LOG_PRINTF("No compatible driver has been found for interface #%d\n", iface->bInterfaceNumber);
 			}
 		}
 			break;
@@ -142,23 +160,6 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 			return;
 		}
 		i += desc_len;
-
-	}
-
-	if (dev->drv && dev->drvdata) {
-		// analyze descriptors
-		LOG_PRINTF("ANALYZE");
-		i = 0;
-		while (i < descriptors_len) {
-			desc_len = buf[i];
-			void *drvdata = dev->drvdata;
-			LOG_PRINTF("[%d]",buf[i+1]);
-			if (dev->drv->analyze_descriptor(drvdata, &buf[i])) {
-				LOG_PRINTF("Device Initialized\n");
-				return;
-			}
-			i += desc_len;
-		}
 	}
 	LOG_PRINTF("Device NOT Initialized\n");
 }
