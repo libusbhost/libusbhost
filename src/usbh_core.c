@@ -196,11 +196,11 @@ void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const 
  * NEW ENUMERATE
  *
  */
-void device_xfer_control_write_setup(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
+void device_xfer_control_write_setup(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
 {
 	usbh_packet_t packet;
 
-	packet.data = data;
+	packet.data.out = data;
 	packet.datalen = datalen;
 	packet.address = dev->address;
 	packet.endpoint_address = 0;
@@ -216,11 +216,11 @@ void device_xfer_control_write_setup(void *data, uint16_t datalen, usbh_packet_c
 	LOG_PRINTF("WR-setup@device...%d \n", dev->address);
 }
 
-void device_xfer_control_write_data(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
+void device_xfer_control_write_data(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
 {
 	usbh_packet_t packet;
 
-	packet.data = data;
+	packet.data.out = data;
 	packet.datalen = datalen;
 	packet.address = dev->address;
 	packet.endpoint_address = 0;
@@ -240,7 +240,7 @@ void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback
 {
 	usbh_packet_t packet;
 
-	packet.data = data;
+	packet.data.in = data;
 	packet.datalen = datalen;
 	packet.address = dev->address;
 	packet.endpoint_address = 0;

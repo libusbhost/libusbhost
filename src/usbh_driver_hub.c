@@ -738,7 +738,7 @@ static void read_ep1(void *drvdata)
 	usbh_packet_t packet;
 
 	packet.address = hub->device[0]->address;
-	packet.data = hub->buffer;
+	packet.data.in = hub->buffer;
 	packet.datalen = hub->endpoint_in_maxpacketsize;
 	packet.endpoint_address = hub->endpoint_in_address;
 	packet.endpoint_size_max = hub->endpoint_in_maxpacketsize;

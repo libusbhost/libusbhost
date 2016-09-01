@@ -214,7 +214,7 @@ static void read_mouse_in(void *drvdata)
 	usbh_packet_t packet;
 
 	packet.address = mouse->usbh_device->address;
-	packet.data = &mouse->buffer[0];
+	packet.data.in = &mouse->buffer[0];
 	packet.datalen = mouse->endpoint_in_maxpacketsize;
 	packet.endpoint_address = mouse->endpoint_in_address;
 	packet.endpoint_size_max = mouse->endpoint_in_maxpacketsize;
