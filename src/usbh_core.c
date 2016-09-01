@@ -172,10 +172,9 @@ void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const 
 	usbh_data.lld_drivers = (const usbh_low_level_driver_t **)low_level_drivers;
 	usbh_data.dev_drivers = device_drivers;
 
-	// TODO: init structures
 	uint32_t k = 0;
 	while (usbh_data.lld_drivers[k]) {
-		LOG_PRINTF("DRIVER %d\n", k);
+		LOG_PRINTF("Initialization low-level driver with index=%d\n", k);
 
 		usbh_device_t * usbh_device =
 			((usbh_generic_data_t *)(usbh_data.lld_drivers[k])->driver_data)->usbh_device;
@@ -186,7 +185,6 @@ void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const 
 			usbh_device[i].drv = 0;
 			usbh_device[i].drvdata = 0;
 		}
-		LOG_PRINTF("DRIVER %d", k);
 		usbh_data.lld_drivers[k]->init(usbh_data.lld_drivers[k]->driver_data);
 
 		k++;
@@ -289,17 +287,22 @@ usbh_device_t *usbh_get_free_device(const usbh_device_t *dev)
 	return 0;
 }
 
-static void device_enumeration_terminate(usbh_device_t *dev)
+static void device_enumeration_finish(usbh_device_t *dev)
 {
 	reset_enumeration();
-	dev->state = 0;
-	dev->address = -1;
+	dev->state = USBH_ENUM_STATE_FIRST;
 }
 
-/* Do not call this function directly,
- *     only via callback passing into low-level function
- * If you must, call it carefully ;)
- */
+static void device_enumeration_terminate(usbh_device_t *dev)
+{
+	dev->address = -1;
+	device_enumeration_finish(dev);
+}
+
+#define CONTINUE_WITH(en) \
+	dev->state = en;\
+	device_enumerate(dev, cb_data);
+
 static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 {
 	const usbh_low_level_driver_t *lld = dev->lld;
@@ -308,12 +311,12 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 	uint8_t state_start = dev->state; // Detection of hang
 //	LOG_PRINTF("\nSTATE: %d\n", state);
 	switch (dev->state) {
-	case 1:
+	case USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
-				dev->state++;
-				LOG_PRINTF("::%d::", dev->address);
+				dev->state = USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ_COMPLETE;
+				LOG_PRINTF("Assigning address: %d\n", usbh_data.address_temporary);
 				device_xfer_control_read(0, 0, device_enumerate, dev);
 				break;
 
@@ -327,25 +330,14 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 		}
 		break;
 
-	case 2:
+	case USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ_COMPLETE:
 		switch (cb_data.status) {
 		case USBH_PACKET_CALLBACK_STATUS_OK:
 			if (dev->address == 0) {
 				dev->address = usbh_data.address_temporary;
-				LOG_PRINTF("ADDR: %d\n", dev->address);
+				LOG_PRINTF("Assigned address: %d\n", dev->address);
 			}
-
-			struct usb_setup_data setup_data;
-
-			setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
-			setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
-			setup_data.wValue = USB_DT_DEVICE << 8;
-			setup_data.wIndex = 0;
-			setup_data.wLength = USB_DT_DEVICE_SIZE;
-
-			dev->state++;
-			device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
-				device_enumerate, dev);
+			CONTINUE_WITH(USBH_ENUM_STATE_DEVICE_DT_READ_SETUP);
 			break;
 
 		case USBH_PACKET_CALLBACK_STATUS_EFATAL:
@@ -357,22 +349,34 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 		}
 		break;
 
-	case 3:
+	case USBH_ENUM_STATE_DEVICE_DT_READ_SETUP:
+		{
+			struct usb_setup_data setup_data;
+
+			setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
+			setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
+			setup_data.wValue = USB_DT_DEVICE << 8;
+			setup_data.wIndex = 0;
+			setup_data.wLength = USB_DT_DEVICE_SIZE;
+
+			dev->state = USBH_ENUM_STATE_DEVICE_DT_READ;
+			device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
+				device_enumerate, dev);
+		}
+		break;
+
+
+	case USBH_ENUM_STATE_DEVICE_DT_READ:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
-				dev->state++;
+				dev->state = USBH_ENUM_STATE_DEVICE_DT_READ_COMPLETE;
 				device_xfer_control_read(&usbh_buffer[0], USB_DT_DEVICE_SIZE,
 					device_enumerate, dev);
 				break;
 
 			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-				dev->state = 2;
-
-				// WARNING: Recursion
-				// .. but should work
-				cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
-				device_enumerate(dev, cb_data);
+				CONTINUE_WITH(USBH_ENUM_STATE_DEVICE_DT_READ_SETUP);
 				break;
 
 			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
@@ -384,7 +388,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 		}
 		break;
 
-	case 4:
+	case USBH_ENUM_STATE_DEVICE_DT_READ_COMPLETE:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
@@ -392,17 +396,9 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 					struct usb_device_descriptor *ddt =
 							(struct usb_device_descriptor *)&usbh_buffer[0];
 					dev->packet_size_max0 = ddt->bMaxPacketSize0;
-					struct usb_setup_data setup_data;
-
-					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
-					setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
-					setup_data.wValue = USB_DT_CONFIGURATION << 8;
-					setup_data.wIndex = 0;
-					setup_data.wLength = ddt->bMaxPacketSize0;//USB_DT_CONFIGURATION_SIZE;
-
-					dev->state++;
-					device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
-						device_enumerate, dev);
+					LOG_PRINTF("Found device with vid=0x%04x pid=0x%04x\n", ddt->idVendor, ddt->idProduct);
+					LOG_PRINTF("class=0x%02x subclass=0x%02x protocol=0x%02x\n", ddt->bDeviceClass, ddt->bDeviceSubClass, ddt->bDeviceProtocol);
+					CONTINUE_WITH(USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ_SETUP)
 				}
 				break;
 
@@ -411,12 +407,10 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 					struct usb_device_descriptor *ddt =
 						(struct usb_device_descriptor *)&usbh_buffer[0];
 					dev->packet_size_max0 = ddt->bMaxPacketSize0;
-					dev->state = 2;
-
-					// WARNING: Recursion
-					// .. but should work
-					cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
-					device_enumerate(dev, cb_data);
+					CONTINUE_WITH(USBH_ENUM_STATE_DEVICE_DT_READ_SETUP);
+				} else {
+					device_enumeration_terminate(dev);
+					ERROR(cb_data.status);
 				}
 				break;
 
@@ -429,11 +423,27 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 		}
 		break;
 
-	case 5:
+	case USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ_SETUP:
+		{
+			struct usb_setup_data setup_data;
+
+			setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_DEVICE;
+			setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
+			setup_data.wValue = USB_DT_CONFIGURATION << 8;
+			setup_data.wIndex = 0;
+			setup_data.wLength = dev->packet_size_max0;
+
+			dev->state = USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ;
+			device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
+				device_enumerate, dev);
+		}
+		break;
+
+	case USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
-				dev->state++;
+				dev->state = USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ_COMPLETE;
 				device_xfer_control_read(&usbh_buffer[USB_DT_DEVICE_SIZE],
 					dev->packet_size_max0, device_enumerate, dev);
 				break;
@@ -448,38 +458,20 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 		}
 		break;
 
-	case 6:
+	case USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ_COMPLETE:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
-				{
-					struct usb_config_descriptor *cdt =
-						(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
-					struct usb_setup_data setup_data;
-					LOG_PRINTF("WRITE: LEN: %d", cdt->wTotalLength);
-					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
-					setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
-					setup_data.wValue = USB_DT_CONFIGURATION << 8;
-					setup_data.wIndex = 0;
-					setup_data.wLength = cdt->wTotalLength;
-
-					dev->state++;
-					device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
-						device_enumerate, dev);
-				}
+				CONTINUE_WITH(USBH_ENUM_STATE_CONFIGURATION_DT_READ_SETUP);
 				break;
 
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				if (cb_data.transferred_length >= USB_DT_CONFIGURATION_SIZE) {
 					struct usb_config_descriptor *cdt =
 						(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
-					if (cb_data.transferred_length <= cdt->wTotalLength) {
-						dev->state = 8;
-
-						// WARNING: Recursion
-						// .. but should work
-						cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
-						device_enumerate(dev, cb_data);
+					if (cb_data.transferred_length == cdt->wTotalLength) {
+						LOG_PRINTF("Configuration descriptor read complete. length: %d\n", cdt->wTotalLength);
+						CONTINUE_WITH(USBH_ENUM_STATE_FIND_DRIVER);
 					}
 				}
 				break;
@@ -493,14 +485,32 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 		}
 		break;
 
-	case 7:
+	case USBH_ENUM_STATE_CONFIGURATION_DT_READ_SETUP:
+		{
+			struct usb_config_descriptor *cdt =
+				(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
+			struct usb_setup_data setup_data;
+			LOG_PRINTF("Getting complete configuration descriptor of length: %d bytes\n", cdt->wTotalLength);
+			setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_DEVICE;
+			setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
+			setup_data.wValue = USB_DT_CONFIGURATION << 8;
+			setup_data.wIndex = 0;
+			setup_data.wLength = cdt->wTotalLength;
+
+			dev->state = USBH_ENUM_STATE_CONFIGURATION_DT_READ;
+			device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
+				device_enumerate, dev);
+		}
+		break;
+
+	case USBH_ENUM_STATE_CONFIGURATION_DT_READ:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
 				{
 					struct usb_config_descriptor *cdt =
 						(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
-					dev->state++;
+					dev->state = USBH_ENUM_STATE_CONFIGURATION_DT_READ_COMPLETE;
 					device_xfer_control_read(&usbh_buffer[USB_DT_DEVICE_SIZE],
 						cdt->wTotalLength, device_enumerate, dev);
 				}
@@ -516,18 +526,16 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 		}
 		break;
 
-	case 8:
+	case USBH_ENUM_STATE_CONFIGURATION_DT_READ_COMPLETE:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
 				{
 					struct usb_config_descriptor *cdt =
 						(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
-					LOG_PRINTF("TOTAL_LENGTH: %d\n", cdt->wTotalLength);
-					device_register(usbh_buffer, cdt->wTotalLength + USB_DT_DEVICE_SIZE, dev);
-					dev->state++;
+					LOG_PRINTF("Configuration descriptor read complete. length: %d\n", cdt->wTotalLength);
+					CONTINUE_WITH(USBH_ENUM_STATE_FIND_DRIVER);
 
-					reset_enumeration();
 				}
 				break;
 
@@ -539,6 +547,16 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				break;
 			}
 
+		}
+		break;
+
+	case USBH_ENUM_STATE_FIND_DRIVER:
+		{
+			struct usb_config_descriptor *cdt =
+				(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
+			device_register(usbh_buffer, cdt->wTotalLength + USB_DT_DEVICE_SIZE, dev);
+
+			device_enumeration_finish(dev);
 		}
 		break;
 
@@ -555,7 +573,6 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 void device_enumeration_start(usbh_device_t *dev)
 {
 	set_enumeration();
-	dev->state = 1;
 
 	// save address
 	uint8_t address = dev->address;
@@ -571,6 +588,7 @@ void device_enumeration_start(usbh_device_t *dev)
 
 	LOG_PRINTF("\n\n\n ENUMERATION OF DEVICE@%d STARTED \n\n", address);
 
+	dev->state = USBH_ENUM_STATE_SET_ADDRESS;
 	struct usb_setup_data setup_data;
 
 	setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
