@@ -295,7 +295,7 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 		packet->endpoint_type == USBH_ENDPOINT_TYPE_BULK) {
 
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) + RX_FIFO_SIZE;
-		const uint32_t * buf32 = packet->data;
+		const uint32_t * buf32 = packet->data.out;
 		int i;
 		LOG_PRINTF("\nSending[%d]: ", packet->datalen);
 		for(i = packet->datalen; i >= 4; i-=4) {
@@ -317,7 +317,7 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 	} else {
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) +
 			RX_FIFO_SIZE + TX_NP_FIFO_SIZE;
-		const uint32_t * buf32 = packet->data;
+		const uint32_t * buf32 = packet->data.out;
 		int i;
 		for(i = packet->datalen; i > 0; i-=4) {
 			*fifo++ = *buf32++;
@@ -334,7 +334,7 @@ static void rxflvl_handle(void *drvdata)
 	uint8_t channel = rxstsp&0xf;
 	uint32_t len = (rxstsp>>4) & 0x1ff;
 	if ((rxstsp&OTG_GRXSTSP_PKTSTS_MASK) == OTG_GRXSTSP_PKTSTS_IN) {
-		uint8_t *data = channels[channel].packet.data;
+		uint8_t *data = channels[channel].packet.data.in;
 		uint32_t *buf32 = (uint32_t *)&data[channels[channel].data_index];
 
 		int32_t i;
@@ -366,7 +366,7 @@ static void rxflvl_handle(void *drvdata)
 		uint32_t i;
 		LOG_PRINTF("\nDATA: ");
 		for (i = 0; i < channels[channel].data_index; i++) {
-			uint8_t *data = channels[channel].packet.data;
+			uint8_t *data = channels[channel].packet.data.in;
 			LOG_PRINTF("%02X ", data[i]);
 		}
 #endif

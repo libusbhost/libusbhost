@@ -242,7 +242,7 @@ static void read_midi_in(void *drvdata, const uint8_t nextstate)
 	usbh_packet_t packet;
 
 	packet.address = midi->usbh_device->address;
-	packet.data = &midi->buffer[0];
+	packet.data.in = &midi->buffer[0];
 	packet.datalen = midi->endpoint_in_maxpacketsize;
 	packet.endpoint_address = midi->endpoint_in_address;
 	packet.endpoint_size_max = midi->endpoint_in_maxpacketsize;
@@ -362,7 +362,7 @@ void usbh_midi_write(uint8_t device_id, const void *data, uint32_t length, midi_
 	midi->sending = true;
 	midi->write_callback_user = callback;
 
-	midi->write_packet.data = (void*)data;	// it is safe cast since we are writing and function usbh_write cannot modify data
+	midi->write_packet.data.out = data;
 	midi->write_packet.datalen = length;
 	midi->write_packet.address = dev->address;
 	midi->write_packet.endpoint_address = midi->endpoint_out_address;

@@ -129,7 +129,10 @@ typedef void (*usbh_packet_callback_t)(usbh_device_t *dev, usbh_packet_callback_
 
 struct _usbh_packet {
 	/// pointer to data
-	void *data;
+	union {
+		const void *out;
+		void *in;
+	} data;
 
 	/// length of the data (up to 1023)
 	uint16_t datalen;
@@ -234,8 +237,8 @@ void usbh_write(usbh_device_t *dev, const usbh_packet_t *packet);
 
 /* Helper functions used by device drivers */
 void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
-void device_xfer_control_write_setup(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
-void device_xfer_control_write_data(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
+void device_xfer_control_write_setup(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
+void device_xfer_control_write_data(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
 
 
 END_DECLS

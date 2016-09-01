@@ -326,7 +326,7 @@ static void read_gp_xbox_in(gp_xbox_device_t *gp_xbox)
 	usbh_packet_t packet;
 
 	packet.address = gp_xbox->usbh_device->address;
-	packet.data = &gp_xbox->buffer[0];
+	packet.data.in = &gp_xbox->buffer[0];
 	packet.datalen = gp_xbox->endpoint_in_maxpacketsize;
 	packet.endpoint_address = gp_xbox->endpoint_in_address;
 	packet.endpoint_size_max = gp_xbox->endpoint_in_maxpacketsize;
