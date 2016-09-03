@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/libusbhost/libusbhost.svg?branch=master](https://travis-ci.org/libusbhost/libusbhost)
 ###General Information
 
 
