@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/libusbhost/libusbhost.svg?branch=master](https://travis-ci.org/libusbhost/libusbhost)
 ###General Information
 
 
@@ -31,6 +32,11 @@ Native device drivers (mostly for demonstration purposes):
 - mouse (draft: only displays raw data)
 - USB MIDI devices (raw data + note on/off)
 
+
+### NEW README UPDATE TODO
+
+
+### OLD INFO
 ###Practical info
 
 !!! Do not forget to invoke   "make clean"  before new build when defines change(_TODO: remove this warning and fix the Makefile_)

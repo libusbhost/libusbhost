@@ -215,8 +215,13 @@ int main(void)
 	 * Pass array of supported device drivers
 	 */
 	const void *lld_drivers[] = {
+#ifdef USE_STM32F4_USBH_DRIVER_FS
 		usbh_lld_stm32f4_driver_fs, // Make sure USE_STM32F4_USBH_DRIVER_FS is defined in usbh_config.h
-//		usbh_lld_stm32f4_driver_hs, // Make sure USE_STM32F4_USBH_DRIVER_HS is defined in usbh_config.h
+#endif
+
+#ifdef USE_STM32F4_USBH_DRIVER_HS
+		usbh_lld_stm32f4_driver_hs, // Make sure USE_STM32F4_USBH_DRIVER_HS is defined in usbh_config.h
+#endif
 		0
 	};
 	usbh_init(lld_drivers, device_drivers);

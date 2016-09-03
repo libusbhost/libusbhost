@@ -326,7 +326,7 @@ static void read_gp_xbox_in(gp_xbox_device_t *gp_xbox)
 	usbh_packet_t packet;
 
 	packet.address = gp_xbox->usbh_device->address;
-	packet.data = &gp_xbox->buffer[0];
+	packet.data.in = &gp_xbox->buffer[0];
 	packet.datalen = gp_xbox->endpoint_in_maxpacketsize;
 	packet.endpoint_address = gp_xbox->endpoint_in_address;
 	packet.endpoint_size_max = gp_xbox->endpoint_in_maxpacketsize;
@@ -364,7 +364,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 		{
 			struct usb_setup_data setup_data;
 
-			setup_data.bmRequestType = 0b00000000;
+			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
 			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
 			setup_data.wValue = gp_xbox->configuration_value;
 			setup_data.wIndex = 0;

@@ -61,6 +61,23 @@ enum USBH_CONTROL_TYPE {
 	USBH_CONTROL_TYPE_DATA
 };
 
+enum USBH_ENUM_STATE {
+	USBH_ENUM_STATE_SET_ADDRESS,
+	USBH_ENUM_STATE_FIRST = USBH_ENUM_STATE_SET_ADDRESS,
+	USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ,
+	USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ_COMPLETE,
+	USBH_ENUM_STATE_DEVICE_DT_READ_SETUP,
+	USBH_ENUM_STATE_DEVICE_DT_READ,
+	USBH_ENUM_STATE_DEVICE_DT_READ_COMPLETE,
+	USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ_SETUP,
+	USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ,
+	USBH_ENUM_STATE_CONFIGURATION_DT_HEADER_READ_COMPLETE,
+	USBH_ENUM_STATE_CONFIGURATION_DT_READ_SETUP,
+	USBH_ENUM_STATE_CONFIGURATION_DT_READ,
+	USBH_ENUM_STATE_CONFIGURATION_DT_READ_COMPLETE,
+	USBH_ENUM_STATE_FIND_DRIVER,
+};
+
 /**
  * @brief The _usbh_device struct
  *
@@ -77,7 +94,7 @@ struct _usbh_device {
 	enum USBH_SPEED speed;
 
 	/// state used for enumeration purposes
-	uint8_t state;
+	enum USBH_ENUM_STATE state;
 
 	/// toggle bit
 	uint8_t toggle0;
@@ -112,7 +129,10 @@ typedef void (*usbh_packet_callback_t)(usbh_device_t *dev, usbh_packet_callback_
 
 struct _usbh_packet {
 	/// pointer to data
-	void *data;
+	union {
+		const void *out;
+		void *in;
+	} data;
 
 	/// length of the data (up to 1023)
 	uint16_t datalen;
@@ -217,9 +237,8 @@ void usbh_write(usbh_device_t *dev, const usbh_packet_t *packet);
 
 /* Helper functions used by device drivers */
 void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
-void device_xfer_control_write_setup(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
-void device_xfer_control_write_data(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
-
+void device_xfer_control_write_setup(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
+void device_xfer_control_write_data(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
 
 END_DECLS
 

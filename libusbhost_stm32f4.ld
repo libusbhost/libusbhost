@@ -28,5 +28,5 @@ MEMORY
 }
 
 /* Include the common ld script. */
-INCLUDE ./libopencm3/lib/libopencm3_stm32f4.ld
+INCLUDE libopencm3_stm32f4.ld
 
