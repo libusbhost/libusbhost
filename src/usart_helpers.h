@@ -38,7 +38,6 @@ struct usart_commands{
 #ifdef USART_DEBUG
 void usart_init(uint32_t usart, uint32_t baudrate);
 void usart_printf(const char *str, ...);
-void usart_vprintf(const char *str, va_list va);
 void usart_fifo_send(void);
 
 void usart_call_cmd(struct usart_commands * commands);
