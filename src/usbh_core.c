@@ -400,26 +400,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 	uint8_t state_start = dev->state; // Detection of hang
 //	LOG_PRINTF("\nSTATE: %d\n", state);
 	switch (dev->state) {
-	case USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ:
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				dev->state = USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ_COMPLETE;
-				LOG_PRINTF("Assigning address: %d\n", usbh_data.address_temporary);
-				device_xfer_control_read(0, 0, device_enumerate, dev);
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				device_enumeration_terminate(dev);
-				ERROR(cb_data.status);
-				break;
-			}
-		}
-		break;
-
-	case USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ_COMPLETE:
+	case USBH_ENUM_STATE_SET_ADDRESS:
 		switch (cb_data.status) {
 		case USBH_PACKET_CALLBACK_STATUS_OK:
 			if (dev->address == 0) {
@@ -740,8 +721,7 @@ void device_enumeration_start(usbh_device_t *dev)
 	setup_data.wIndex = 0;
 	setup_data.wLength = 0;
 
-	device_xfer_control_write_setup(&setup_data, sizeof(setup_data),
-		device_enumerate, dev);
+	device_control(dev, device_enumerate, &setup_data, 0);
 }
 
 /**
