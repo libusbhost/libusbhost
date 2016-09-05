@@ -50,6 +50,16 @@ static bool enumeration(void)
 	return usbh_data.enumeration_run;
 }
 
+static void device_remove(usbh_device_t *dev)
+{
+	if (dev->drv && dev->drvdata) {
+		dev->drv->remove(dev->drvdata);
+	}
+	dev->address = -1;
+	dev->drv = 0;
+	dev->drvdata = 0;
+}
+
 /**
  *
  */
@@ -146,6 +156,7 @@ static void device_register(void *descriptors, uint16_t descriptors_len, usbh_de
 					k += desc_len;
 				}
 				LOG_PRINTF("Device driver isn't compatible with this device\n");
+				device_remove(dev);
 			} else {
 				LOG_PRINTF("No compatible driver has been found for interface #%d\n", iface->bInterfaceNumber);
 			}
@@ -630,18 +641,9 @@ void usbh_poll(uint32_t time_curr_us)
 
 		case USBH_POLL_STATUS_DEVICE_DISCONNECTED:
 			{
-				// Device disconnected
-				if (usbh_device[0].drv && usbh_device[0].drvdata) {
-					usbh_device[0].drv->remove(usbh_device[0].drvdata);
-				}
-				usbh_device[0].drv = 0;
-				usbh_device[0].drvdata = 0;
-
 				uint32_t i;
-				for (i = 1; i < USBH_MAX_DEVICES; i++) {
-					usbh_device[i].address = -1;
-					usbh_device[i].drv = 0;
-					usbh_device[i].drvdata = 0;
+				for (i = 0; i < USBH_MAX_DEVICES; i++) {
+					device_remove(&usbh_device[i]);
 				}
 			}
 			break;

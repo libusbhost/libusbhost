@@ -835,23 +835,11 @@ static void remove(void *drvdata)
 	hub_device_t *hub = (hub_device_t *)drvdata;
 	uint8_t i;
 
-	// Call fast... to avoid polling
 	hub->state = 0;
 	hub->endpoint_in_address = 0;
 	hub->busy = 0;
-	for (i = 1; i < USBH_HUB_MAX_DEVICES + 1; i++) {
-		if (hub->device[i]) {
-			if (hub->device[i]->drv && hub->device[i]->drvdata) {
-				if (hub->device[i]->drv->remove != remove) {
-					LOG_PRINTF("\t\t\t\tHUB REMOVE %d\n",hub->device[i]->address);
-					hub->device[i]->drv->remove(hub->device[i]->drvdata);
-				}
-			}
-			hub->device[i] = 0;
-		}
-		hub->device[0]->drv = 0;
-		hub->device[0]->drvdata = 0;
-		hub->device[0] = 0;
+	for (i = 0; i < USBH_HUB_MAX_DEVICES + 1; i++) {
+		hub->device[i] = 0;
 
 	}
 }
