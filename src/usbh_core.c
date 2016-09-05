@@ -28,6 +28,8 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/usb/usbstd.h>
 
+#include <stddef.h>
+
 static struct {
 	bool enumeration_run;
 	const usbh_low_level_driver_t * const *lld_drivers;
@@ -204,11 +206,7 @@ void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const 
 
 }
 
-/*
- * NEW ENUMERATE
- *
- */
-void device_xfer_control_write_setup(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
+static void device_xfer_control_write_setup(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
 {
 	usbh_packet_t packet;
 
@@ -228,7 +226,7 @@ void device_xfer_control_write_setup(const void *data, uint16_t datalen, usbh_pa
 	LOG_PRINTF("WR-setup@device...%d \n", dev->address);
 }
 
-void device_xfer_control_write_data(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
+static void device_xfer_control_write_data(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
 {
 	usbh_packet_t packet;
 
@@ -248,7 +246,7 @@ void device_xfer_control_write_data(const void *data, uint16_t datalen, usbh_pac
 	LOG_PRINTF("WR-data@device...%d \n", dev->address);
 }
 
-void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
+static void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev)
 {
 	usbh_packet_t packet;
 
@@ -267,6 +265,85 @@ void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback
 	LOG_PRINTF("RD@device...%d |  \n", dev->address);
 }
 
+
+static void control_state_machine(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
+{
+	switch (dev->control.state) {
+	case USBH_CONTROL_STATE_SETUP:
+		if (cb_data.status != USBH_PACKET_CALLBACK_STATUS_OK) {
+			dev->control.state = USBH_CONTROL_STATE_NONE;
+			// Unable to deliver setup control packet - this is a fatal error
+			usbh_packet_callback_data_t ret_data;
+			ret_data.status = USBH_PACKET_CALLBACK_STATUS_EFATAL;
+			ret_data.transferred_length = 0;
+			dev->control.callback(dev, ret_data);
+			break;
+		}
+		if (dev->control.setup_data.bmRequestType & USB_REQ_TYPE_IN) {
+			dev->control.state = USBH_CONTROL_STATE_DATA;
+			device_xfer_control_read(dev->control.data.in, dev->control.data_length, control_state_machine, dev);
+		} else {
+			if (dev->control.data_length == 0) {
+				dev->control.state = USBH_CONTROL_STATE_STATUS;
+				device_xfer_control_read(0, 0, control_state_machine, dev);
+			} else {
+				dev->control.state = USBH_CONTROL_STATE_DATA;
+				device_xfer_control_write_data(dev->control.data.out, dev->control.data_length, control_state_machine, dev);
+			}
+		}
+		break;
+
+	case USBH_CONTROL_STATE_DATA:
+		if (dev->control.setup_data.bmRequestType & USB_REQ_TYPE_IN) {
+			dev->control.state = USBH_CONTROL_STATE_NONE;
+			dev->control.callback(dev, cb_data);
+		} else {
+			if (cb_data.status != USBH_PACKET_CALLBACK_STATUS_OK) {
+				dev->control.state = USBH_CONTROL_STATE_NONE;
+				// Unable to deliver data control packet - this is a fatal error
+				usbh_packet_callback_data_t ret_data;
+				ret_data.status = USBH_PACKET_CALLBACK_STATUS_EFATAL;
+				ret_data.transferred_length = 0;
+				dev->control.callback(dev, ret_data);
+				break;
+			}
+
+			if (dev->control.data_length == 0) {
+				// we should be in status state when the length of data is zero
+				LOG_PRINTF("Control logic error\n");
+				dev->control.state = USBH_CONTROL_STATE_NONE;
+				dev->control.callback(dev, cb_data);
+			} else {
+				dev->control.state = USBH_CONTROL_STATE_STATUS;
+				device_xfer_control_read(0, 0, control_state_machine, dev);
+			}
+		}
+		break;
+
+	case USBH_CONTROL_STATE_STATUS:
+		dev->control.state = USBH_CONTROL_STATE_NONE;
+		dev->control.callback(dev, cb_data);
+		break;
+
+	default:
+		break;
+	}
+}
+
+void device_control(usbh_device_t *dev, usbh_packet_callback_t callback, const struct usb_setup_data *setup_data, void *data)
+{
+	if (dev->control.state != USBH_CONTROL_STATE_NONE) {
+		LOG_PRINTF("ERROR: Use of control state machine while not idle\n");
+		return;
+	}
+
+	dev->control.state = USBH_CONTROL_STATE_SETUP;
+	dev->control.callback = callback;
+	dev->control.data.out = data;
+	dev->control.data_length = setup_data->wLength;
+	dev->control.setup_data = *setup_data;
+	device_xfer_control_write_setup(&dev->control.setup_data, sizeof(dev->control.setup_data), control_state_machine, dev);
+}
 
 
 bool usbh_enum_available(void)
@@ -675,7 +752,7 @@ void usbh_poll(uint32_t time_curr_us)
 {
 	uint32_t k = 0;
 	while (usbh_data.lld_drivers[k]) {
-		usbh_device_t * usbh_device =
+		usbh_device_t *usbh_device =
 			((usbh_generic_data_t *)(usbh_data.lld_drivers[k]->driver_data))->usbh_device;
 		usbh_generic_data_t *lld_data = usbh_data.lld_drivers[k]->driver_data;
 
@@ -689,12 +766,14 @@ void usbh_poll(uint32_t time_curr_us)
 			usbh_device[0].lld = usbh_data.lld_drivers[k];
 			usbh_device[0].speed = usbh_data.lld_drivers[k]->root_speed(lld_data);
 			usbh_device[0].address = 1;
+			usbh_device[0].control.state = USBH_CONTROL_STATE_NONE;
 
 			device_enumeration_start(&usbh_device[0]);
 			break;
 
 		case USBH_POLL_STATUS_DEVICE_DISCONNECTED:
 			{
+				usbh_device[0].control.state = USBH_CONTROL_STATE_NONE;
 				uint32_t i;
 				for (i = 0; i < USBH_MAX_DEVICES; i++) {
 					device_remove(&usbh_device[i]);

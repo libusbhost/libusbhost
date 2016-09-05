@@ -26,6 +26,7 @@
 #include "usbh_config.h"
 #include "usbh_core.h"
 
+#include <libopencm3/usb/usbstd.h>
 #include <stdint.h>
 
 BEGIN_DECLS
@@ -64,8 +65,6 @@ enum USBH_CONTROL_TYPE {
 enum USBH_ENUM_STATE {
 	USBH_ENUM_STATE_SET_ADDRESS,
 	USBH_ENUM_STATE_FIRST = USBH_ENUM_STATE_SET_ADDRESS,
-	USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ,
-	USBH_ENUM_STATE_SET_ADDRESS_EMPTY_READ_COMPLETE,
 	USBH_ENUM_STATE_DEVICE_DT_READ_SETUP,
 	USBH_ENUM_STATE_DEVICE_DT_READ,
 	USBH_ENUM_STATE_DEVICE_DT_READ_COMPLETE,
@@ -80,6 +79,38 @@ enum USBH_ENUM_STATE {
 	USBH_ENUM_STATE_SET_CONFIGURATION_COMPLETE,
 	USBH_ENUM_STATE_FIND_DRIVER,
 };
+
+enum USBH_CONTROL_STATE {
+	USBH_CONTROL_STATE_NONE,
+	USBH_CONTROL_STATE_SETUP,
+	USBH_CONTROL_STATE_DATA,
+	USBH_CONTROL_STATE_STATUS,
+};
+
+typedef struct _usbh_device usbh_device_t;
+
+struct _usbh_packet_callback_data {
+	/// status - it is used for reporting of the errors
+	enum USBH_PACKET_CALLBACK_STATUS status;
+
+	/// count of bytes that has been actually transferred
+	uint32_t transferred_length;
+};
+typedef struct _usbh_packet_callback_data usbh_packet_callback_data_t;
+
+typedef void (*usbh_packet_callback_t)(usbh_device_t *dev, usbh_packet_callback_data_t status);
+
+struct _usbh_control {
+	enum USBH_CONTROL_STATE state;
+	usbh_packet_callback_t callback;
+	union {
+		const void *out;
+		void *in;
+	} data;
+	uint16_t data_length;
+	struct usb_setup_data setup_data;
+};
+typedef struct _usbh_control usbh_control_t;
 
 /**
  * @brief The _usbh_device struct
@@ -98,6 +129,7 @@ struct _usbh_device {
 
 	/// state used for enumeration purposes
 	enum USBH_ENUM_STATE state;
+	usbh_control_t control;
 
 	/// toggle bit
 	uint8_t toggle0;
@@ -118,17 +150,6 @@ struct _usbh_device {
 	const void *lld;
 };
 typedef struct _usbh_device usbh_device_t;
-
-struct _usbh_packet_callback_data {
-	/// status - it is used for reporting of the errors
-	enum USBH_PACKET_CALLBACK_STATUS status;
-
-	/// count of bytes that has been actually transferred
-	uint32_t transferred_length;
-};
-typedef struct _usbh_packet_callback_data usbh_packet_callback_data_t;
-
-typedef void (*usbh_packet_callback_t)(usbh_device_t *dev, usbh_packet_callback_data_t status);
 
 struct _usbh_packet {
 	/// pointer to data
@@ -239,9 +260,7 @@ void usbh_read(usbh_device_t *dev, usbh_packet_t *packet);
 void usbh_write(usbh_device_t *dev, const usbh_packet_t *packet);
 
 /* Helper functions used by device drivers */
-void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
-void device_xfer_control_write_setup(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
-void device_xfer_control_write_data(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
+void device_control(usbh_device_t *dev, usbh_packet_callback_t callback, const struct usb_setup_data *setup_data, void *data);
 
 END_DECLS
 
