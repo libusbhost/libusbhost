@@ -37,8 +37,6 @@ enum STATES {
 	STATE_READING_REQUEST,
 	STATE_READING_COMPLETE_AND_CHECK_REPORT,
 	STATE_SET_REPORT_EMPTY_READ,
-	STATE_SET_CONFIGURATION_REQUEST,
-	STATE_SET_CONFIGURATION_EMPTY_READ,
 	STATE_GET_REPORT_DESCRIPTOR_READ_SETUP,// configuration is complete at this point. We write request
 	STATE_GET_REPORT_DESCRIPTOR_READ,
 	STATE_GET_REPORT_DESCRIPTOR_READ_COMPLETE,// after the read finishes, we parse that descriptor
@@ -204,7 +202,7 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 	}
 
 	if (hid->endpoint_in_address && hid->report0_length) {
-		hid->state_next = STATE_SET_CONFIGURATION_REQUEST;
+		hid->state_next = STATE_GET_REPORT_DESCRIPTOR_READ_SETUP;
 		return true;
 	}
 
@@ -283,62 +281,6 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					hid_config.hid_in_message_handler(hid->device_id, hid->buffer, cb_data.transferred_length);
 				}
 				hid->state_next = STATE_READING_REQUEST;
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-				ERROR(cb_data.status);
-				hid->state_next = STATE_INACTIVE;
-				break;
-			}
-		}
-		break;
-
-	case STATE_SET_CONFIGURATION_EMPTY_READ:
-		{
-			LOG_PRINTF("|empty packet read|");
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				hid->state_next = STATE_GET_REPORT_DESCRIPTOR_READ_SETUP;
-				device_xfer_control_read(0, 0, event, dev);
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-				ERROR(cb_data.status);
-				hid->state_next = STATE_INACTIVE;
-				break;
-			}
-		}
-		break;
-
-	case STATE_GET_REPORT_DESCRIPTOR_READ_SETUP:
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				{
-					hid->endpoint_in_toggle = 0;
-					// We support only the first report descriptor with index 0
-
-					// limit the size of the report descriptor!
-					if (hid->report0_length > USBH_HID_BUFFER) {
-						hid->report0_length = USBH_HID_BUFFER;
-					}
-
-					struct usb_setup_data setup_data;
-
-					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_INTERFACE;
-					setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
-					setup_data.wValue = USB_DT_REPORT << 8;
-					setup_data.wIndex = 0;
-					setup_data.wLength = hid->report0_length;
-
-					hid->state_next = STATE_GET_REPORT_DESCRIPTOR_READ;
-					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
-
-				}
 				break;
 
 			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
@@ -434,18 +376,25 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 		}
 		break;
 
-	case STATE_SET_CONFIGURATION_REQUEST:
+	case STATE_GET_REPORT_DESCRIPTOR_READ_SETUP:
 		{
+			hid->endpoint_in_toggle = 0;
+			// We support only the first report descriptor with index 0
+
+			// limit the size of the report descriptor!
+			if (hid->report0_length > USBH_HID_BUFFER) {
+				hid->report0_length = USBH_HID_BUFFER;
+			}
+
 			struct usb_setup_data setup_data;
 
-			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
-			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
-			setup_data.wValue = hid->configuration_value;
+			setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_INTERFACE;
+			setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
+			setup_data.wValue = USB_DT_REPORT << 8;
 			setup_data.wIndex = 0;
-			setup_data.wLength = 0;
+			setup_data.wLength = hid->report0_length;
 
-			hid->state_next = STATE_SET_CONFIGURATION_EMPTY_READ;
-
+			hid->state_next = STATE_GET_REPORT_DESCRIPTOR_READ;
 			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
 		}
 		break;

@@ -86,13 +86,6 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 	hub_device_t *hub = (hub_device_t *)drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
 	switch (desc_type) {
-	case USB_DT_CONFIGURATION:
-		{
-			struct usb_config_descriptor *cfg = (struct usb_config_descriptor*)descriptor;
-			hub->buffer[0] = cfg->bConfigurationValue;
-		}
-		break;
-
 	case USB_DT_ENDPOINT:
 		{
 			struct usb_endpoint_descriptor *ep = (struct usb_endpoint_descriptor *)descriptor;
@@ -110,7 +103,6 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 	case USB_DT_HUB:
 		{
 			struct usb_hub_descriptor *desc = (struct usb_hub_descriptor *)descriptor;
-			//~ hub->ports_num = desc->head.bNbrPorts;
 			if ( desc->head.bNbrPorts <= USBH_HUB_MAX_DEVICES) {
 				hub->ports_num = desc->head.bNbrPorts;
 			} else {
@@ -226,42 +218,6 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				hub->state = hub->state_after_empty_read;
 				event(dev, cb_data);
-				break;
-			}
-		}
-		break;
-
-	case 3: // Get HUB Descriptor write
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				if (hub->ports_num) {
-					hub->index = 0;
-					hub->state = 6;
-					LOG_PRINTF("No need to get HUB DESC\n");
-					event(dev, cb_data);
-				} else {
-					hub->endpoint_in_toggle = 0;
-
-					struct usb_setup_data setup_data;
-					hub->desc_len = hub->device[0]->packet_size_max0;
-
-					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_DEVICE;
-					setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
-					setup_data.wValue = 0x29<<8;
-					setup_data.wIndex = 0;
-					setup_data.wLength = hub->desc_len;
-
-					hub->state++;
-					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
-					LOG_PRINTF("DO Need to get HUB DESC\n");
-				}
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
 				break;
 			}
 		}
@@ -779,19 +735,27 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 
 	case 1:
 		{
-			LOG_PRINTF("CFGVAL: %d\n", hub->buffer[0]);
-			struct usb_setup_data setup_data;
+			if (hub->ports_num) {
+				hub->index = 0;
+				hub->state = 6;
+				LOG_PRINTF("No need to get HUB DESC\n");
+				event(dev, (usbh_packet_callback_data_t){0, 0});
+			} else {
+				hub->endpoint_in_toggle = 0;
 
-			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
-			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
-			setup_data.wValue = hub->buffer[0];
-			setup_data.wIndex = 0;
-			setup_data.wLength = 0;
+				struct usb_setup_data setup_data;
+				hub->desc_len = hub->device[0]->packet_size_max0;
 
-			hub->state = EMPTY_PACKET_READ_STATE;
-			hub->state_after_empty_read = 3;
-			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+				setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_DEVICE;
+				setup_data.bRequest = USB_REQ_GET_DESCRIPTOR;
+				setup_data.wValue = 0x29 << 8;
+				setup_data.wIndex = 0;
+				setup_data.wLength = hub->desc_len;
 
+				hub->state = 4;
+				device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+				LOG_PRINTF("DO Need to get HUB DESC\n");
+			}
 		}
 		break;
 	case 100:

@@ -30,11 +30,9 @@
 
 enum STATES {
 	STATE_INACTIVE,
-	STATE_READING_COMPLETE,
+	STATE_INITIAL,
 	STATE_READING_REQUEST,
-	STATE_SET_CONFIGURATION_REQUEST,
-	STATE_SET_CONFIGURATION_EMPTY_READ,
-	STATE_SET_CONFIGURATION_COMPLETE
+	STATE_READING_COMPLETE,
 };
 
 #define GP_XBOX_CORRECT_TRANSFERRED_LENGTH 20
@@ -132,7 +130,7 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 				}
 
 				if (gp_xbox->endpoint_in_address) {
-					gp_xbox->state_next = STATE_SET_CONFIGURATION_REQUEST;
+					gp_xbox->state_next = STATE_INITIAL;
 					return true;
 				}
 			}
@@ -268,45 +266,6 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 		}
 		break;
 
-	case STATE_SET_CONFIGURATION_EMPTY_READ:
-		{
-			LOG_PRINTF("|empty packet read|");
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				gp_xbox->state_next = STATE_SET_CONFIGURATION_COMPLETE;
-				device_xfer_control_read(0, 0, event, dev);
-				break;
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				gp_xbox->state_next = STATE_INACTIVE;
-				break;
-			}
-		}
-		break;
-	case STATE_SET_CONFIGURATION_COMPLETE: // Configured
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				gp_xbox->state_next = STATE_READING_REQUEST;
-				gp_xbox->endpoint_in_toggle = 0;
-				LOG_PRINTF("\ngp_xbox CONFIGURED\n");
-				if (gp_xbox_config->notify_connected) {
-					gp_xbox_config->notify_connected(gp_xbox->device_id);
-				}
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				gp_xbox->state_next = STATE_INACTIVE;
-				break;
-			}
-		}
-		break;
-
 	case STATE_INACTIVE:
 		{
 			LOG_PRINTF("XBOX inactive");
@@ -360,19 +319,14 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 		}
 		break;
 
-	case STATE_SET_CONFIGURATION_REQUEST:
+	case STATE_INITIAL:
 		{
-			struct usb_setup_data setup_data;
-
-			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
-			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
-			setup_data.wValue = gp_xbox->configuration_value;
-			setup_data.wIndex = 0;
-			setup_data.wLength = 0;
-
-			gp_xbox->state_next = STATE_SET_CONFIGURATION_EMPTY_READ;
-
-			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+			gp_xbox->state_next = STATE_READING_REQUEST;
+			gp_xbox->endpoint_in_toggle = 0;
+			LOG_PRINTF("\ngp_xbox CONFIGURED\n");
+			if (gp_xbox_config->notify_connected) {
+				gp_xbox_config->notify_connected(gp_xbox->device_id);
+			}
 		}
 		break;
 

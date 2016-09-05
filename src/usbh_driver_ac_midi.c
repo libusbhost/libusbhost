@@ -206,30 +206,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t status)
 			LOG_PRINTF("\n CAN'T TOUCH THIS... ignoring data\n");
 		}
 		break;
-	case 2:
-		{
-			LOG_PRINTF("|empty packet read|");
-			if (status.status == USBH_PACKET_CALLBACK_STATUS_OK) {
-				midi->state++;
-				device_xfer_control_read(0, 0, event, dev);
-			}
-		}
-		break;
-	case 3: // Configured
-		{
-			if (status.status == USBH_PACKET_CALLBACK_STATUS_OK) {
-				midi->state = 100;
 
-				midi->endpoint_in_toggle = 0;
-				LOG_PRINTF("\nMIDI CONFIGURED\n");
-
-				// Notify user
-				if (midi_config->notify_connected) {
-					midi_config->notify_connected(midi->device_id);
-				}
-			}
-		}
-		break;
 	default:
 		break;
 	}
@@ -265,7 +242,6 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 	(void)drvdata;
 
 	midi_device_t *midi = drvdata;
-	usbh_device_t *dev = midi->usbh_device;
 	switch (midi->state) {
 
 	/// Upon configuration, some controllers send additional error data
@@ -276,11 +252,13 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 			midi->state = 101;
 		}
 		break;
+
 	case 101:
 		{
 			read_midi_in(drvdata, 102);
 		}
 		break;
+
 	case 102:
 		{
 			// if elapsed MIDI initial delay microseconds
@@ -289,6 +267,7 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 			}
 		}
 		break;
+
 	case 25:
 		{
 			read_midi_in(drvdata, 26);
@@ -297,18 +276,15 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 
 	case 1:
 		{
-			//~ LOG_PRINTF("CFGVAL: %d\n", dev->config_val);
-			struct usb_setup_data setup_data;
+			midi->state = 100;
 
-			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
-			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
-			setup_data.wValue = midi->buffer[0];
-			setup_data.wIndex = 0;
-			setup_data.wLength = 0;
+			midi->endpoint_in_toggle = 0;
+			LOG_PRINTF("\nMIDI CONFIGURED\n");
 
-			midi->state++;
-
-			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+			// Notify user
+			if (midi_config->notify_connected) {
+				midi_config->notify_connected(midi->device_id);
+			}
 		}
 		break;
 	}

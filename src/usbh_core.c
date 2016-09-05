@@ -483,7 +483,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 						(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
 					if (cb_data.transferred_length == cdt->wTotalLength) {
 						LOG_PRINTF("Configuration descriptor read complete. length: %d\n", cdt->wTotalLength);
-						CONTINUE_WITH(USBH_ENUM_STATE_FIND_DRIVER);
+						CONTINUE_WITH(USBH_ENUM_STATE_SET_CONFIGURATION_SETUP);
 					}
 				}
 				break;
@@ -546,7 +546,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 					struct usb_config_descriptor *cdt =
 						(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
 					LOG_PRINTF("Configuration descriptor read complete. length: %d\n", cdt->wTotalLength);
-					CONTINUE_WITH(USBH_ENUM_STATE_FIND_DRIVER);
+					CONTINUE_WITH(USBH_ENUM_STATE_SET_CONFIGURATION_SETUP);
 
 				}
 				break;
@@ -559,6 +559,60 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				break;
 			}
 
+		}
+		break;
+
+	case USBH_ENUM_STATE_SET_CONFIGURATION_SETUP:
+		{
+			struct usb_config_descriptor *cdt =
+				(struct usb_config_descriptor *)&usbh_buffer[USB_DT_DEVICE_SIZE];
+
+			struct usb_setup_data setup_data;
+
+			setup_data.bmRequestType = USB_REQ_TYPE_STANDARD | USB_REQ_TYPE_DEVICE;
+			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
+			setup_data.wValue = cdt->bConfigurationValue;
+			setup_data.wIndex = 0;
+			setup_data.wLength = 0;
+
+			dev->state = USBH_ENUM_STATE_SET_CONFIGURATION_EMPTY_READ;
+
+			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), device_enumerate, dev);
+		}
+		break;
+
+	case USBH_ENUM_STATE_SET_CONFIGURATION_EMPTY_READ:
+		{
+			switch (cb_data.status) {
+			case USBH_PACKET_CALLBACK_STATUS_OK:
+				dev->state = USBH_ENUM_STATE_SET_CONFIGURATION_COMPLETE;
+				device_xfer_control_read(0, 0, device_enumerate, dev);
+				break;
+
+			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
+			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+				device_enumeration_terminate(dev);
+				ERROR(cb_data.status);
+				break;
+			}
+		}
+		break;
+
+	case USBH_ENUM_STATE_SET_CONFIGURATION_COMPLETE:
+		{
+			switch (cb_data.status) {
+			case USBH_PACKET_CALLBACK_STATUS_OK:
+				CONTINUE_WITH(USBH_ENUM_STATE_FIND_DRIVER);
+				break;
+
+			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
+			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+				device_enumeration_terminate(dev);
+				ERROR(cb_data.status);
+				break;
+			}
 		}
 		break;
 
