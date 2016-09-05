@@ -38,7 +38,6 @@ enum STATES {
 	STATE_READING_COMPLETE_AND_CHECK_REPORT,
 	STATE_SET_REPORT_EMPTY_READ,
 	STATE_GET_REPORT_DESCRIPTOR_READ_SETUP,// configuration is complete at this point. We write request
-	STATE_GET_REPORT_DESCRIPTOR_READ,
 	STATE_GET_REPORT_DESCRIPTOR_READ_COMPLETE,// after the read finishes, we parse that descriptor
 	STATE_SET_IDLE,
 	STATE_SET_IDLE_COMPLETE,
@@ -47,9 +46,7 @@ enum STATES {
 enum REPORT_STATE {
 	REPORT_STATE_NULL,
 	REPORT_STATE_READY,
-	REPORT_STATE_WRITE_PENDING,
-	REPORT_STATE_WRITE_PENDING_DATA,
-	REPORT_STATE_EMPTY_READ,
+	REPORT_STATE_PENDING,
 };
 
 struct _hid_device {
@@ -211,60 +208,10 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 
 static void report_event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 {
+	(void)cb_data;// UNUSED
+
 	hid_device_t *hid = (hid_device_t *)dev->drvdata;
-	switch (hid->report_state) {
-	case REPORT_STATE_WRITE_PENDING:
-		switch (cb_data.status) {
-		case USBH_PACKET_CALLBACK_STATUS_OK:
-			hid->report_state = REPORT_STATE_WRITE_PENDING_DATA;
-
-			device_xfer_control_write_data(hid->report_data, hid->report_data_length, report_event, dev);
-			break;
-
-		case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-		case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-		case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			ERROR(cb_data.status);
-			hid->state_next = STATE_INACTIVE;
-			break;
-		}
-		break;
-
-	case REPORT_STATE_WRITE_PENDING_DATA:
-		switch (cb_data.status) {
-		case USBH_PACKET_CALLBACK_STATUS_OK:
-			hid->report_state = REPORT_STATE_EMPTY_READ;
-			device_xfer_control_read(0, 0, report_event, dev);
-			LOG_PRINTF("reading empty\n");
-			break;
-
-		case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-		case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-		case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			ERROR(cb_data.status);
-			hid->state_next = STATE_INACTIVE;
-			break;
-		}
-		break;
-
-
-	case REPORT_STATE_EMPTY_READ:
-		switch (cb_data.status) {
-		case USBH_PACKET_CALLBACK_STATUS_OK:
-			hid->report_state = REPORT_STATE_READY;
-			break;
-
-		case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-		case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-		case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			ERROR(cb_data.status);
-			hid->state_next = STATE_INACTIVE;
-			break;
-		}
-		break;
-	default:
-		break;
-	}
+	hid->report_state = REPORT_STATE_READY;
 }
 
 static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
@@ -291,25 +238,6 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			}
 		}
 		break;
-
-	case STATE_GET_REPORT_DESCRIPTOR_READ:
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				hid->state_next = STATE_GET_REPORT_DESCRIPTOR_READ_COMPLETE;
-				device_xfer_control_read(hid->buffer, hid->report0_length, event, dev);
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-				ERROR(cb_data.status);
-				hid->state_next = STATE_INACTIVE;
-				break;
-			}
-		}
-		break;
-
 
 	case STATE_GET_REPORT_DESCRIPTOR_READ_COMPLETE: // read complete, SET_IDLE to 0
 		{
@@ -394,8 +322,8 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 			setup_data.wIndex = 0;
 			setup_data.wLength = hid->report0_length;
 
-			hid->state_next = STATE_GET_REPORT_DESCRIPTOR_READ;
-			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+			hid->state_next = STATE_GET_REPORT_DESCRIPTOR_READ_COMPLETE;
+			device_control(dev, event, &setup_data, hid->buffer);
 		}
 		break;
 
@@ -440,8 +368,8 @@ bool hid_set_report(uint8_t device_id, uint8_t val)
 
 	hid->report_data[0] = val;
 
-	hid->report_state = REPORT_STATE_WRITE_PENDING;
-	device_xfer_control_write_setup(&setup_data, sizeof(setup_data), report_event, hid->usbh_device);
+	hid->report_state = REPORT_STATE_PENDING;
+	device_control(hid->usbh_device, report_event, &setup_data, &hid->report_data);
 	return true;
 }
 
