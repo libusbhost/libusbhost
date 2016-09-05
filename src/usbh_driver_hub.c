@@ -638,6 +638,8 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						}
 						if ((sts & (1<<(HUB_FEATURE_PORT_LOWSPEED))) &&
 							!(sts & (1<<(HUB_FEATURE_PORT_HIGHSPEED)))) {
+#define DISABLE_LOW_SPEED
+#ifdef DISABLE_LOW_SPEED
 							LOG_PRINTF("Low speed device");
 
 							// Disable Low speed device immediately
@@ -655,6 +657,12 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 							hub->current_port = CURRENT_PORT_NONE;
 							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+#else
+							hub->device[port]->speed = USBH_SPEED_LOW;
+							LOG_PRINTF("Low speed device");
+							hub->timestamp_us = hub->time_curr_us;
+							hub->state = 100; // schedule wait for 500ms
+#endif
 						} else if (!(sts & (1<<(HUB_FEATURE_PORT_LOWSPEED))) &&
 							!(sts & (1<<(HUB_FEATURE_PORT_HIGHSPEED)))) {
 							hub->device[port]->speed = USBH_SPEED_FULL;
