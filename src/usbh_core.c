@@ -397,7 +397,6 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 	const usbh_low_level_driver_t *lld = dev->lld;
 	usbh_generic_data_t *lld_data = lld->driver_data;
 	uint8_t *usbh_buffer = lld_data->usbh_buffer;
-	uint8_t state_start = dev->state; // Detection of hang
 //	LOG_PRINTF("\nSTATE: %d\n", state);
 	switch (dev->state) {
 	case USBH_ENUM_STATE_SET_ADDRESS:
@@ -644,10 +643,6 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 	default:
 		LOG_PRINTF("Error: Unknown state "__FILE__"/%d\n", __LINE__);
 		break;
-	}
-
-	if (state_start == dev->state) {
-		LOG_PRINTF("\n !HANG %d\n", state_start);
 	}
 }
 
