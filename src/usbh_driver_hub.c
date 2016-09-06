@@ -27,7 +27,6 @@
 
 #include <stdint.h>
 
-
 static hub_device_t hub_device[USBH_MAX_HUBS];
 
 static bool initialized = false;
@@ -41,7 +40,7 @@ void hub_driver_init(void)
 	for (i = 0; i < USBH_MAX_HUBS; i++) {
 		hub_device[i].device[0] = 0;
 		hub_device[i].ports_num = 0;
-		hub_device[i].current_port = -1;
+		hub_device[i].current_port = CURRENT_PORT_NONE;
 	}
 }
 
@@ -60,15 +59,14 @@ static void *init(void *usbh_dev)
 			break;
 		}
 	}
-	LOG_PRINTF("%{%d}",i);
-    LOG_FLUSH();
+	LOG_PRINTF("{%d}",i);
 	if (i == USBH_MAX_HUBS) {
-		LOG_PRINTF("ERRRRRRR");
+		LOG_PRINTF("Unable to initialize hub driver");
 		return 0;
 	}
 
 	drvdata = &hub_device[i];
-	drvdata->state = 0;
+	drvdata->state = EVENT_STATE_NONE;
 	drvdata->ports_num = 0;
 	drvdata->device[0] = (usbh_device_t *)usbh_dev;
 	drvdata->busy = 0;
@@ -119,7 +117,7 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 	}
 
 	if (hub->endpoint_in_address) {
-		hub->state = 1;
+		hub->state = EVENT_STATE_INITIAL;
 		LOG_PRINTF("end enum");
 		return true;
 	}
@@ -133,7 +131,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 
 	LOG_PRINTF("\nHUB->STATE = %d\n", hub->state);
 	switch (hub->state) {
-	case 26:
+	case EVENT_STATE_POLL:
 		switch (cb_data.status) {
 		case USBH_PACKET_CALLBACK_STATUS_OK:
 			{
@@ -149,7 +147,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				// Driver error... port not found
 				if (!psc) {
 					// Continue reading status change endpoint
-					hub->state = 25;
+					hub->state = EVENT_STATE_POLL_REQ;
 					break;
 				}
 
@@ -164,7 +162,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				if (hub->current_port >= 1) {
 					if (hub->current_port != port) {
 						LOG_PRINTF("X");
-						hub->state = 25;
+						hub->state = EVENT_STATE_POLL_REQ;
 						break;
 					}
 				}
@@ -180,67 +178,30 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				setup_data.wValue = 0;
 				setup_data.wIndex = port;
 				setup_data.wLength = 4;
-				hub->state = 31;
+				hub->state = EVENT_STATE_GET_STATUS_COMPLETE;
 
 				hub->current_port = port;
 				LOG_PRINTF("\n\nPORT FOUND: %d\n", port);
-				device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+				device_control(dev, event, &setup_data, &hub->hub_and_port_status[port]);
 			}
 			break;
 
 		case USBH_PACKET_CALLBACK_STATUS_EFATAL:
 		case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 			ERROR(cb_data.status);
-			hub->state = 0;
+			hub->state = EVENT_STATE_NONE;
 			break;
 
 		case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
 
 			// In case of EAGAIN error, retry read on status endpoint
-			hub->state = 25;
+			hub->state = EVENT_STATE_POLL_REQ;
 			LOG_PRINTF("HUB: Retrying...\n");
 			break;
 		}
 		break;
 
-	case EMPTY_PACKET_READ_STATE:
-		{
-			LOG_PRINTF("|empty packet read|");
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				device_xfer_control_read(0, 0, event, dev);
-				hub->state = hub->state_after_empty_read;
-				hub->state_after_empty_read = 0;
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				hub->state = hub->state_after_empty_read;
-				event(dev, cb_data);
-				break;
-			}
-		}
-		break;
-
-	case 4: // Get HUB Descriptor read
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				hub->state++;
-				device_xfer_control_read(hub->buffer, hub->desc_len, event, dev); // "error dynamic size" - bad comment, investigate
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				break;
-			}
-		}
-		break;
-
-	case 5:// Hub descriptor found
+	case EVENT_STATE_READ_HUB_DESCRIPTOR_COMPLETE:// Hub descriptor found
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
@@ -259,13 +220,13 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						setup_data.wIndex = 0;
 						setup_data.wLength = hub->desc_len;
 
-						hub->state = 4;
-						device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+						hub->state = EVENT_STATE_READ_HUB_DESCRIPTOR_COMPLETE;
+						device_control(dev, event, &setup_data, hub->buffer);
 						break;
 					} else if (hub_descriptor->head.bDescLength == hub->desc_len) {
 						hub->ports_num = hub_descriptor->head.bNbrPorts;
 
-						hub->state++;
+						hub->state = EVENT_STATE_ENABLE_PORTS;
 						hub->index = 0;
 						cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
 						event(dev, cb_data);
@@ -290,7 +251,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 								LOG_PRINTF("INCREASE NUMBER OF ENABLED PORTS\n");
 								hub->ports_num = USBH_HUB_MAX_DEVICES;
 							}
-							hub->state++;
+							hub->state = EVENT_STATE_ENABLE_PORTS;
 							hub->index = 0;
 
 							cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
@@ -308,7 +269,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 		}
 		break;
 
-	case 6:// enable ports
+	case EVENT_STATE_ENABLE_PORTS:// enable ports
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
@@ -323,37 +284,15 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					setup_data.wIndex = hub->index;
 					setup_data.wLength = 0;
 
-					hub->state_after_empty_read = hub->state;
-					hub->state = EMPTY_PACKET_READ_STATE;
-
-					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+					device_control(dev, event, &setup_data, 0);
 				} else {
-					hub->state++;
 					// TODO:
 					// Delay Based on hub descriptor field bPwr2PwrGood
 					// delay_ms_busy_loop(200);
 
 					LOG_PRINTF("\nHUB CONFIGURED & PORTS POWERED\n");
 
-					cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
-					event(dev, cb_data);
-				}
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				break;
-			}
-		}
-		break;
-
-	case 7:
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				{
+					// get device status
 					struct usb_setup_data setup_data;
 
 					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_DEVICE;
@@ -362,8 +301,9 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 					setup_data.wIndex = 0;
 					setup_data.wLength = 4;
 
-					hub->state++;
-					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+					hub->state = EVENT_STATE_GET_PORT_STATUS;
+					hub->index = 0;
+					device_control(dev, event, &setup_data, hub->buffer);
 				}
 				break;
 
@@ -373,43 +313,32 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				ERROR(cb_data.status);
 				break;
 			}
-
-		}
-		break;
-	case 8:
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				device_xfer_control_read(hub->buffer, 4, event, dev);
-				hub->index = 0;
-				hub->state++;
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				break;
-			}
 		}
 		break;
 
-	case 9:
+	case EVENT_STATE_GET_PORT_STATUS:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
 				{
-					struct usb_setup_data setup_data;
+					if (hub->index < hub->ports_num) {
+						//TODO: process data contained in hub->buffer
 
-					setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
-					setup_data.bRequest = USB_REQ_GET_STATUS;
-					setup_data.wValue = 0;
-					setup_data.wIndex = ++hub->index;
-					setup_data.wLength = 4;
+						struct usb_setup_data setup_data;
 
-					hub->state++;
+						setup_data.bmRequestType = USB_REQ_TYPE_IN | USB_REQ_TYPE_CLASS | USB_REQ_TYPE_INTERFACE | USB_REQ_TYPE_ENDPOINT;
+						setup_data.bRequest = USB_REQ_GET_STATUS;
+						setup_data.wValue = 0;
+						setup_data.wIndex = ++hub->index;
+						setup_data.wLength = 4;
 
-					device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+						hub->state = EVENT_STATE_GET_PORT_STATUS;
+						device_control(dev, event, &setup_data, hub->buffer);
+					} else {
+						hub->busy = 0;
+						hub->state = EVENT_STATE_POLL_REQ;
+					}
+
 				}
 				break;
 
@@ -422,77 +351,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 		}
 		break;
 
-	case 10:
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				device_xfer_control_read(hub->buffer, 4, event, dev);
-				hub->state++;
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				break;
-			}
-		}
-		break;
-
-	case 11:
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				if (hub->index < hub->ports_num) {
-					hub->state = 9;
-					// process data contained in hub->buffer
-					// TODO:
-					cb_data.status = USBH_PACKET_CALLBACK_STATUS_OK;
-					event(dev, cb_data);
-				} else {
-					hub->busy = 0;
-					hub->state = 25;
-				}
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				break;
-			}
-		}
-		break;
-
-	case 31: // Read port status
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				{
-					int8_t port = hub->current_port;
-					hub->state++;
-
-					// TODO: rework to endianess aware,
-					// (maybe whole library is affected by this)
-					// Detail:
-					// 	Isn't universal. Here is endianess ok,
-					// 	but on another architecture may be incorrect
-					device_xfer_control_read(&hub->hub_and_port_status[port], 4, event, dev);
-				}
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				// continue
-				hub->state = 25;
-				break;
-			}
-
-		}
-		break;
-	case 32:
+	case EVENT_STATE_GET_STATUS_COMPLETE:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
@@ -512,7 +371,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							if (!hub->device[port]) {
 								if (!usbh_enum_available() || hub->busy) {
 									LOG_PRINTF("\n\t\t\tCannot enumerate %d %d\n", !usbh_enum_available(), hub->busy);
-									hub->state = 25;
+									hub->state = EVENT_STATE_POLL_REQ;
 									break;
 								}
 							}
@@ -526,10 +385,8 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							setup_data.wIndex = port;
 							setup_data.wLength = 0;
 
-							hub->state_after_empty_read = 33;
-							hub->state = EMPTY_PACKET_READ_STATE;
-
-							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+							hub->state = EVENT_STATE_PORT_RESET_REQ;
+							device_control(dev, event, &setup_data, 0);
 
 						} else if(stc & (1<<HUB_FEATURE_PORT_RESET)) {
 							// clear feature C_PORT_RESET
@@ -542,16 +399,15 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							setup_data.wIndex = port;
 							setup_data.wLength = 0;
 
-							hub->state_after_empty_read = 35;
-							hub->state = EMPTY_PACKET_READ_STATE;
+							hub->state = EVENT_STATE_PORT_RESET_COMPLETE;
 
 							LOG_PRINTF("RESET");
-							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+							device_control(dev, event, &setup_data, 0);
 						} else {
 							LOG_PRINTF("another STC %d\n", stc);
 						}
 					} else {
-						hub->state = 25;
+						hub->state = EVENT_STATE_POLL_REQ;
 						LOG_PRINTF("HUB status change\n");
 					}
 				}
@@ -562,12 +418,12 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				ERROR(cb_data.status);
 				// continue
-				hub->state = 25;
+				hub->state = EVENT_STATE_POLL_REQ;
 				break;
 			}
 		}
 		break;
-	case 33:
+	case EVENT_STATE_PORT_RESET_REQ:
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
@@ -584,13 +440,12 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							setup_data.wIndex = port;
 							setup_data.wLength = 0;
 
-							hub->state_after_empty_read = 11;
-							hub->state = EMPTY_PACKET_READ_STATE;
+							hub->state = EVENT_STATE_GET_PORT_STATUS;
 
 							LOG_PRINTF("CONN");
 
 							hub->busy = 1;
-							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+							device_control(dev, event, &setup_data, 0);
 						}
 					} else {
 						LOG_PRINTF("\t\t\t\tDISCONNECT EVENT\n");
@@ -603,7 +458,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						hub->device[port]->drvdata = 0;
 						hub->device[port] = 0;
 						hub->current_port = CURRENT_PORT_NONE;
-						hub->state = 25;
+						hub->state = EVENT_STATE_POLL_REQ;
 						hub->busy = 0;
 					}
 				}
@@ -614,12 +469,12 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				ERROR(cb_data.status);
 				// continue
-				hub->state = 25;
+				hub->state = EVENT_STATE_POLL_REQ;
 				break;
 			}
 		}
 		break;
-	case 35:	// RESET COMPLETE, start enumeration
+	case EVENT_STATE_PORT_RESET_COMPLETE:	// RESET COMPLETE, start enumeration
 		{
 			switch (cb_data.status) {
 			case USBH_PACKET_CALLBACK_STATUS_OK:
@@ -652,29 +507,29 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 							setup_data.wLength = 0;
 
 							// After write process another devices, poll for events
-							hub->state_after_empty_read = 11;//Expecting all ports are powered (constant/non-changeable after init)
-							hub->state = EMPTY_PACKET_READ_STATE;
+							//Expecting all ports are powered (constant/non-changeable after init)
+							hub->state = EVENT_STATE_GET_PORT_STATUS;
 
 							hub->current_port = CURRENT_PORT_NONE;
-							device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+							device_control(dev, event, &setup_data, 0);
 #else
 							hub->device[port]->speed = USBH_SPEED_LOW;
 							LOG_PRINTF("Low speed device");
 							hub->timestamp_us = hub->time_curr_us;
-							hub->state = 100; // schedule wait for 500ms
+							hub->state = EVENT_STATE_SLEEP_500_MS; // schedule wait for 500ms
 #endif
 						} else if (!(sts & (1<<(HUB_FEATURE_PORT_LOWSPEED))) &&
 							!(sts & (1<<(HUB_FEATURE_PORT_HIGHSPEED)))) {
 							hub->device[port]->speed = USBH_SPEED_FULL;
 							LOG_PRINTF("Full speed device");
 							hub->timestamp_us = hub->time_curr_us;
-							hub->state = 100; // schedule wait for 500ms
+							hub->state = EVENT_STATE_SLEEP_500_MS; // schedule wait for 500ms
 						}
 
 
 					} else {
 						LOG_PRINTF("%s:%d Do not know what to do, when device is disabled after reset\n", __FILE__, __LINE__);
-						hub->state = 25;
+						hub->state = EVENT_STATE_POLL_REQ;
 						return;
 					}
 				}
@@ -685,7 +540,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				ERROR(cb_data.status);
 				// continue
-				hub->state = 25;
+				hub->state = EVENT_STATE_POLL_REQ;
 				break;
 			}
 		}
@@ -712,7 +567,7 @@ static void read_ep1(void *drvdata)
 	packet.callback_arg = hub->device[0];
 	packet.toggle = &hub->endpoint_in_toggle;
 
-	hub->state = 26;
+	hub->state = EVENT_STATE_POLL;
 	usbh_read(hub->device[0], &packet);
 	LOG_PRINTF("@hub %d/EP1 |  \n", hub->device[0]->address);
 
@@ -731,7 +586,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 	hub->time_curr_us = time_curr_us;
 
 	switch (hub->state) {
-	case 25:
+	case EVENT_STATE_POLL_REQ:
 		{
 			if (usbh_enum_available()) {
 				read_ep1(hub);
@@ -741,11 +596,11 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 		}
 		break;
 
-	case 1:
+	case EVENT_STATE_INITIAL:
 		{
 			if (hub->ports_num) {
 				hub->index = 0;
-				hub->state = 6;
+				hub->state = EVENT_STATE_ENABLE_PORTS;
 				LOG_PRINTF("No need to get HUB DESC\n");
 				event(dev, (usbh_packet_callback_data_t){0, 0});
 			} else {
@@ -760,17 +615,17 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 				setup_data.wIndex = 0;
 				setup_data.wLength = hub->desc_len;
 
-				hub->state = 4;
-				device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+				hub->state = EVENT_STATE_READ_HUB_DESCRIPTOR_COMPLETE;
+				device_control(dev, event, &setup_data, hub->buffer);
 				LOG_PRINTF("DO Need to get HUB DESC\n");
 			}
 		}
 		break;
-	case 100:
+	case EVENT_STATE_SLEEP_500_MS:
 		if (hub->time_curr_us - hub->timestamp_us > 500000) {
 			int8_t port = hub->current_port;
-			LOG_PRINTF("PORT: %d", port);
-			LOG_PRINTF("\nNEW device at address: %d\n", hub->device[port]->address);
+			LOG_PRINTF("PORT: %d\n", port);
+			LOG_PRINTF("NEW device at address: %d\n", hub->device[port]->address);
 			hub->device[port]->lld = hub->device[0]->lld;
 
 			device_enumeration_start(hub->device[port]);
@@ -784,7 +639,7 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 			// Only one device on bus can have address==0
 			hub->busy = 0;
 
-			hub->state = 25;
+			hub->state = EVENT_STATE_POLL_REQ;
 		}
 		break;
 	default:
@@ -807,7 +662,7 @@ static void remove(void *drvdata)
 	hub_device_t *hub = (hub_device_t *)drvdata;
 	uint8_t i;
 
-	hub->state = 0;
+	hub->state = EVENT_STATE_NONE;
 	hub->endpoint_in_address = 0;
 	hub->busy = 0;
 	for (i = 0; i < USBH_HUB_MAX_DEVICES + 1; i++) {

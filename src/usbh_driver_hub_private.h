@@ -61,7 +61,19 @@
 
 #define CURRENT_PORT_NONE -1
 
-#define EMPTY_PACKET_READ_STATE 255
+enum EVENT_STATE {
+	EVENT_STATE_NONE,
+	EVENT_STATE_INITIAL,
+	EVENT_STATE_POLL_REQ,
+	EVENT_STATE_POLL,
+	EVENT_STATE_READ_HUB_DESCRIPTOR_COMPLETE,
+	EVENT_STATE_ENABLE_PORTS,
+	EVENT_STATE_GET_PORT_STATUS,
+	EVENT_STATE_PORT_RESET_REQ,
+	EVENT_STATE_PORT_RESET_COMPLETE,
+	EVENT_STATE_SLEEP_500_MS,
+	EVENT_STATE_GET_STATUS_COMPLETE,
+};
 
 struct _hub_device {
 	usbh_device_t *device[USBH_HUB_MAX_DEVICES + 1];
@@ -69,8 +81,7 @@ struct _hub_device {
 	uint16_t endpoint_in_maxpacketsize;
 	uint8_t endpoint_in_address;
 	uint8_t endpoint_in_toggle;
-	uint8_t state;
-	uint8_t state_after_empty_read;
+	enum EVENT_STATE state;
 
 	uint8_t desc_len;
 	uint16_t ports_num;
