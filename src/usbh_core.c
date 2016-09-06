@@ -52,7 +52,7 @@ static bool enumeration(void)
 	return usbh_data.enumeration_run;
 }
 
-static void device_remove(usbh_device_t *dev)
+void device_remove(usbh_device_t *dev)
 {
 	if (dev->drv && dev->drvdata) {
 		dev->drv->remove(dev->drvdata);

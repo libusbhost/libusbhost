@@ -449,13 +449,8 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 						}
 					} else {
 						LOG_PRINTF("\t\t\t\tDISCONNECT EVENT\n");
-						if (hub->device[port]->drv && hub->device[port]->drvdata) {
-							hub->device[port]->drv->remove(hub->device[port]->drvdata);
-						}
-						hub->device[port]->address = -1;
+						device_remove(hub->device[port]);
 
-						hub->device[port]->drv = 0;
-						hub->device[port]->drvdata = 0;
 						hub->device[port] = 0;
 						hub->current_port = CURRENT_PORT_NONE;
 						hub->state = EVENT_STATE_POLL_REQ;

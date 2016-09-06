@@ -259,6 +259,7 @@ void usbh_write(usbh_device_t *dev, const usbh_packet_t *packet);
 
 /* Helper functions used by device drivers */
 void device_control(usbh_device_t *dev, usbh_packet_callback_t callback, const struct usb_setup_data *setup_data, void *data);
+void device_remove(usbh_device_t *dev);
 
 END_DECLS
 
