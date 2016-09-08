@@ -29,10 +29,10 @@
 #include <libopencm3/usb/usbstd.h>
 
 
-static void *midi_init(void *usbh_dev);
-static bool midi_analyze_descriptor(void *drvdata, void *descriptor);
-static void midi_poll(void *drvdata, uint32_t tflp);
-static void midi_remove(void *drvdata);
+static void *init(void *usbh_dev);
+static bool analyze_descriptor(void *drvdata, void *descriptor);
+static void poll(void *drvdata, uint32_t tflp);
+static void remove(void *drvdata);
 
 static midi_device_t midi_device[USBH_AC_MIDI_MAX_DEVICES];
 static const midi_config_t *midi_config = 0;
@@ -50,10 +50,10 @@ static const usbh_dev_driver_info_t usbh_midi_driver_info = {
 };
 
 const usbh_dev_driver_t usbh_midi_driver = {
-	.init = midi_init,
-	.analyze_descriptor = midi_analyze_descriptor,
-	.poll = midi_poll,
-	.remove = midi_remove,
+	.init = init,
+	.analyze_descriptor = analyze_descriptor,
+	.poll = poll,
+	.remove = remove,
 	.info = &usbh_midi_driver_info
 };
 
@@ -70,7 +70,7 @@ void midi_driver_init(const midi_config_t *config)
  *
  *
  */
-static void *midi_init(void *usbh_dev)
+static void *init(void *usbh_dev)
 {
 	if (!midi_config || !initialized) {
 		LOG_PRINTF("\n%s/%d : driver not initialized\n", __FILE__, __LINE__);
@@ -101,7 +101,7 @@ static void *midi_init(void *usbh_dev)
 /**
  * Returns true if all needed data are parsed
  */
-static bool midi_analyze_descriptor(void *drvdata, void *descriptor)
+static bool analyze_descriptor(void *drvdata, void *descriptor)
 {
 	midi_device_t *midi = drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
@@ -237,7 +237,7 @@ static void read_midi_in(void *drvdata, const uint8_t nextstate)
  * 
  *  @param t_us global time us
  */
-static void midi_poll(void *drvdata, uint32_t t_us)
+static void poll(void *drvdata, uint32_t t_us)
 {
 	(void)drvdata;
 
@@ -353,7 +353,7 @@ void usbh_midi_write(uint8_t device_id, const void *data, uint32_t length, midi_
 	usbh_write(dev, &midi->write_packet);
 }
 
-static void midi_remove(void *drvdata)
+static void remove(void *drvdata)
 {
 	midi_device_t *midi = drvdata;
 
