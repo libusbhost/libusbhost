@@ -24,6 +24,8 @@
 #include "usbh_driver_ac_midi_private.h"
 #include "usart_helpers.h"
 
+#include <stddef.h>
+
 #include <libopencm3/usb/midi.h>
 #include <libopencm3/usb/audio.h>
 #include <libopencm3/usb/usbstd.h>
@@ -35,7 +37,7 @@ static void poll(void *drvdata, uint32_t tflp);
 static void remove(void *drvdata);
 
 static midi_device_t midi_device[USBH_AC_MIDI_MAX_DEVICES];
-static const midi_config_t *midi_config = 0;
+static const midi_config_t *midi_config = NULL;
 static bool initialized = false;
 
 static const usbh_dev_driver_info_t usbh_midi_driver_info = {
@@ -77,7 +79,7 @@ static void *init(void *usbh_dev)
 		return 0;
 	}
 	uint32_t i;
-	midi_device_t *drvdata = 0;
+	midi_device_t *drvdata = NULL;
 
 	// find free data space for midi device
 	for (i = 0; i < USBH_AC_MIDI_MAX_DEVICES; i++) {
@@ -89,7 +91,7 @@ static void *init(void *usbh_dev)
 			drvdata->endpoint_in_toggle = 0;
 			drvdata->endpoint_out_toggle = 0;
 			drvdata->usbh_device = usbh_dev;
-			drvdata->write_callback_user = 0;
+			drvdata->write_callback_user = NULL;
 			drvdata->sending = false;
 			break;
 		}

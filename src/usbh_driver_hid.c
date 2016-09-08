@@ -28,6 +28,7 @@
 #include <libopencm3/usb/usbstd.h>
 #include <libopencm3/usb/hid.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #define USB_HID_SET_REPORT 0x09
 #define USB_HID_SET_IDLE 0x0A
@@ -100,7 +101,7 @@ static void *init(void *usbh_dev)
 	}
 
 	uint32_t i;
-	hid_device_t *drvdata = 0;
+	hid_device_t *drvdata = NULL;
 
 	// find free data space for HID device
 	for (i = 0; i < USBH_HID_MAX_DEVICES; i++) {

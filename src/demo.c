@@ -119,7 +119,7 @@ static const usbh_dev_driver_t *device_drivers[] = {
 	&usbh_hid_driver,
 	&usbh_gp_xbox_driver,
 	&usbh_midi_driver,
-	0
+	NULL
 };
 
 static void gp_xbox_update(uint8_t device_id, gp_xbox_packet_t packet)
@@ -234,7 +234,7 @@ int main(void)
 #ifdef USE_STM32F4_USBH_DRIVER_HS
 		usbh_lld_stm32f4_driver_hs, // Make sure USE_STM32F4_USBH_DRIVER_HS is defined in usbh_config.h
 #endif
-		0
+		NULL
 	};
 	usbh_init(lld_drivers, device_drivers);
 	gpio_clear(GPIOD,  GPIO13);

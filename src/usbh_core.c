@@ -35,7 +35,7 @@ static struct {
 	const usbh_low_level_driver_t * const *lld_drivers;
 	const usbh_dev_driver_t * const *dev_drivers;
 	int8_t address_temporary;
-} usbh_data = {0};
+} usbh_data = {};
 
 static void set_enumeration(void)
 {
@@ -58,8 +58,8 @@ void device_remove(usbh_device_t *dev)
 		dev->drv->remove(dev->drvdata);
 	}
 	dev->address = -1;
-	dev->drv = 0;
-	dev->drvdata = 0;
+	dev->drv = NULL;
+	dev->drvdata = NULL;
 }
 
 /**
@@ -105,11 +105,10 @@ static bool find_driver(usbh_device_t *dev, const usbh_dev_driver_info_t * devic
 static void device_register(void *descriptors, uint16_t descriptors_len, usbh_device_t *dev)
 {
 	uint32_t i = 0;
-	dev->drv = 0;
 	uint8_t *buf = (uint8_t *)descriptors;
 
-	dev->drv = 0;
-	dev->drvdata = 0;
+	dev->drv = NULL;
+	dev->drvdata = NULL;
 
 	uint8_t desc_len = buf[i];
 	uint8_t desc_type = buf[i + 1];
@@ -285,7 +284,7 @@ static void control_state_machine(usbh_device_t *dev, usbh_packet_callback_data_
 		} else {
 			if (dev->control.data_length == 0) {
 				dev->control.state = USBH_CONTROL_STATE_STATUS;
-				device_xfer_control_read(0, 0, control_state_machine, dev);
+				device_xfer_control_read(NULL, 0, control_state_machine, dev);
 			} else {
 				dev->control.state = USBH_CONTROL_STATE_DATA;
 				device_xfer_control_write_data(dev->control.data.out, dev->control.data_length, control_state_machine, dev);
@@ -315,7 +314,7 @@ static void control_state_machine(usbh_device_t *dev, usbh_packet_callback_data_
 				dev->control.callback(dev, cb_data);
 			} else {
 				dev->control.state = USBH_CONTROL_STATE_STATUS;
-				device_xfer_control_read(0, 0, control_state_machine, dev);
+				device_xfer_control_read(NULL, 0, control_state_machine, dev);
 			}
 		}
 		break;
