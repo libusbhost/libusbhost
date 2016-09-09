@@ -14,7 +14,7 @@ add_library (usbhost
 	${inc}/usbh_core.h
 	${inc}/usbh_driver_ac_midi.h
 	${inc}/usbh_driver_gp_xbox.h
-	${inc}/usbh_driver_hid_mouse.h
+	${inc}/usbh_driver_hid.h
 	${inc}/usbh_driver_hub.h
 	${inc}/usbh_lld_stm32f4.h
 	${inc}/driver/usbh_device_driver.h
@@ -23,7 +23,7 @@ add_library (usbhost
 	usbh_driver_ac_midi.c
 	usbh_driver_ac_midi_private.h
 	usbh_driver_gp_xbox.c
-	usbh_driver_hid_mouse.c
+	usbh_driver_hid.c
 	usbh_driver_hub.c
 	usbh_driver_hub_private.h
 	usbh_lld_stm32f4.c

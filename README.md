@@ -20,7 +20,7 @@ This means no allocation and reallocation is affecting performance
 
 - HUB
 - Gamepad - XBox compatible Controller
-- mouse (draft: only displays raw data)
+- Generic Human Interface driver: mouse, keyboard (raw data)
 - USB MIDI devices (raw data + note on/off)
 
 ## Steps to compile library and demo

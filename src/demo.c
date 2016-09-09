@@ -23,7 +23,7 @@
 #include "usart_helpers.h"			/// provides LOG_PRINTF macros used for debugging
 #include "usbh_core.h"				/// provides usbh_init() and usbh_poll()
 #include "usbh_lld_stm32f4.h"		/// provides low level usb host driver for stm32f4 platform
-#include "usbh_driver_hid_mouse.h"	/// provides usb device driver Human Interface Device - type mouse
+#include "usbh_driver_hid.h"		/// provides generic usb device driver for Human Interface Device (HID)
 #include "usbh_driver_hub.h"		/// provides usb full speed hub driver (Low speed devices on hub are not supported)
 #include "usbh_driver_gp_xbox.h"	/// provides usb device driver for Gamepad: Microsoft XBOX compatible Controller
 #include "usbh_driver_ac_midi.h"	/// provides usb device driver for midi class devices
@@ -116,7 +116,7 @@ static void gpio_setup(void)
 
 static const usbh_dev_driver_t *device_drivers[] = {
 	&usbh_hub_driver,
-	&usbh_hid_mouse_driver,
+	&usbh_hid_driver,
 	&usbh_gp_xbox_driver,
 	&usbh_midi_driver,
 	0
@@ -148,17 +148,29 @@ static const gp_xbox_config_t gp_xbox_config = {
 	.notify_disconnected = &gp_xbox_disconnected
 };
 
-static void mouse_in_message_handler(uint8_t device_id, const uint8_t *data)
+static void hid_in_message_handler(uint8_t device_id, const uint8_t *data, uint32_t length)
 {
 	(void)device_id;
 	(void)data;
+	if (length < 4) {
+		LOG_PRINTF("data too short, type=%d\n", hid_get_type(device_id));
+		return;
+	}
+
 	// print only first 4 bytes, since every mouse should have at least these four set.
 	// Report descriptors are not read by driver for now, so we do not know what each byte means
-	LOG_PRINTF("MOUSE EVENT %02X %02X %02X %02X \n", data[0], data[1], data[2], data[3]);
+	LOG_PRINTF("HID EVENT %02X %02X %02X %02X \n", data[0], data[1], data[2], data[3]);
+	if (hid_get_type(device_id) == HID_TYPE_KEYBOARD) {
+		static int x = 0;
+		if (x != data[2]) {
+			x = data[2];
+			hid_set_report(device_id, x);
+		}
+	}
 }
 
-static const hid_mouse_config_t mouse_config = {
-	.mouse_in_message_handler = &mouse_in_message_handler
+static const hid_config_t hid_config = {
+	.hid_in_message_handler = &hid_in_message_handler
 };
 
 static void midi_in_message_handler(int device_id, uint8_t *data)
@@ -200,7 +212,7 @@ int main(void)
 	 *
 	 * Pass configuration struct where the callbacks are defined
 	 */
-	hid_mouse_driver_init(&mouse_config);
+	hid_driver_init(&hid_config);
 	hub_driver_init();
 	gp_xbox_driver_init(&gp_xbox_config);
 	midi_driver_init(&midi_config);

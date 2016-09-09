@@ -38,10 +38,10 @@
 // Set this wisely
 #define BUFFER_ONE_BYTES	(2048)
 
-// MOUSE
-#define USBH_HID_MOUSE_MAX_DEVICES	(2)
-
-#define USBH_HID_MOUSE_BUFFER		(32)
+// HID class devices
+#define USBH_HID_MAX_DEVICES	(2)
+#define USBH_HID_BUFFER		(256)
+#define USBH_HID_REPORT_BUFFER (4)
 
 // MIDI
 // Maximal number of midi devices connected to whatever hub
