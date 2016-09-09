@@ -122,6 +122,17 @@ static const usbh_dev_driver_t *device_drivers[] = {
 	NULL
 };
 
+static const usbh_low_level_driver_t * const lld_drivers[] = {
+#ifdef USE_STM32F4_USBH_DRIVER_FS
+	&usbh_lld_stm32f4_driver_fs, // Make sure USE_STM32F4_USBH_DRIVER_FS is defined in usbh_config.h
+#endif
+
+#ifdef USE_STM32F4_USBH_DRIVER_HS
+	&usbh_lld_stm32f4_driver_hs, // Make sure USE_STM32F4_USBH_DRIVER_HS is defined in usbh_config.h
+#endif
+	NULL
+	};
+
 static void gp_xbox_update(uint8_t device_id, gp_xbox_packet_t packet)
 {
 	(void)device_id;
@@ -218,7 +229,6 @@ int main(void)
 	midi_driver_init(&midi_config);
 
 	gpio_set(GPIOD,  GPIO13);
-
 	/**
 	 * Pass array of supported low level drivers
 	 * In case of stm32f407, there are up to two supported OTG hosts on one chip.
@@ -226,16 +236,6 @@ int main(void)
 	 *
 	 * Pass array of supported device drivers
 	 */
-	const void *lld_drivers[] = {
-#ifdef USE_STM32F4_USBH_DRIVER_FS
-		usbh_lld_stm32f4_driver_fs, // Make sure USE_STM32F4_USBH_DRIVER_FS is defined in usbh_config.h
-#endif
-
-#ifdef USE_STM32F4_USBH_DRIVER_HS
-		usbh_lld_stm32f4_driver_hs, // Make sure USE_STM32F4_USBH_DRIVER_HS is defined in usbh_config.h
-#endif
-		NULL
-	};
 	usbh_init(lld_drivers, device_drivers);
 	gpio_clear(GPIOD,  GPIO13);
 

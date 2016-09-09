@@ -1022,7 +1022,7 @@ static usbh_lld_stm32f4_driver_data_t driver_data_fs = {
 	.channels = channels_fs,
 	.num_channels = NUM_CHANNELS_FS
 };
-static const usbh_low_level_driver_t driver_fs = {
+const usbh_low_level_driver_t usbh_lld_stm32f4_driver_fs = {
 	.init = init,
 	.poll = poll,
 	.read = read,
@@ -1030,7 +1030,6 @@ static const usbh_low_level_driver_t driver_fs = {
 	.root_speed = root_speed,
 	.driver_data = &driver_data_fs
 };
-const void *usbh_lld_stm32f4_driver_fs = &driver_fs;
 #endif
 
 // USB High Speed - OTG_HS
@@ -1042,7 +1041,8 @@ static usbh_lld_stm32f4_driver_data_t driver_data_hs = {
 	.channels = channels_hs,
 	.num_channels = NUM_CHANNELS_HS
 };
-static const usbh_low_level_driver_t driver_hs = {
+
+const usbh_low_level_driver_t usbh_lld_stm32f4_driver_hs = {
 	.init = init,
 	.poll = poll,
 	.read = read,
@@ -1050,5 +1050,5 @@ static const usbh_low_level_driver_t driver_hs = {
 	.root_speed = root_speed,
 	.driver_data = &driver_data_hs
 };
-const void *usbh_lld_stm32f4_driver_hs = &driver_hs;
+
 #endif

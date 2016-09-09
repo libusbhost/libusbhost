@@ -41,13 +41,14 @@
 BEGIN_DECLS
 
 typedef struct _usbh_dev_driver usbh_dev_driver_t;
+typedef struct _usbh_low_level_driver usbh_low_level_driver_t;
 
 /**
  * @brief usbh_init
  * @param low_level_drivers list of the low level drivers to be used by this library
  * @param device_drivers list of the device drivers that could be used with attached devices
  */
-void usbh_init(const void *low_level_drivers[], const usbh_dev_driver_t * const device_drivers[]);
+void usbh_init(const usbh_low_level_driver_t * const low_level_drivers[], const usbh_dev_driver_t * const device_drivers[]);
 
 /**
  * @brief usbh_poll
