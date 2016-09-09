@@ -240,7 +240,6 @@ void device_xfer_control_read(void *data, uint16_t datalen, usbh_packet_callback
 void device_xfer_control_write_setup(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
 void device_xfer_control_write_data(const void *data, uint16_t datalen, usbh_packet_callback_t callback, usbh_device_t *dev);
 
-
 END_DECLS
 
 #endif
