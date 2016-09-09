@@ -32,6 +32,7 @@ BEGIN_DECLS
  */
 void hub_driver_init(void);
 
+typedef struct _usbh_dev_driver usbh_dev_driver_t;
 extern const usbh_dev_driver_t usbh_hub_driver;
 
 END_DECLS

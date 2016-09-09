@@ -72,7 +72,7 @@ void gp_xbox_driver_init(const gp_xbox_config_t *config)
  *
  *
  */
-static void *init(void *usbh_dev)
+static void *init(usbh_device_t *usbh_dev)
 {
 	if (!initialized) {
 		LOG_PRINTF("\n%s/%d : driver not initialized\n", __FILE__, __LINE__);
@@ -89,7 +89,7 @@ static void *init(void *usbh_dev)
 			drvdata->device_id = i;
 			drvdata->endpoint_in_address = 0;
 			drvdata->endpoint_in_toggle = 0;
-			drvdata->usbh_device = (usbh_device_t *)usbh_dev;
+			drvdata->usbh_device = usbh_dev;
 			break;
 		}
 	}

@@ -45,7 +45,7 @@ void hub_driver_init(void)
 	}
 }
 
-static void *init(void *usbh_dev)
+static void *init(usbh_device_t *usbh_dev)
 {
 	if (!initialized) {
 		LOG_PRINTF("\n%s/%d : driver not initialized\n", __FILE__, __LINE__);
@@ -69,7 +69,7 @@ static void *init(void *usbh_dev)
 	drvdata = &hub_device[i];
 	drvdata->state = EVENT_STATE_NONE;
 	drvdata->ports_num = 0;
-	drvdata->device[0] = (usbh_device_t *)usbh_dev;
+	drvdata->device[0] = usbh_dev;
 	drvdata->busy = 0;
 	drvdata->endpoint_in_address = 0;
 	drvdata->endpoint_in_maxpacketsize = 0;

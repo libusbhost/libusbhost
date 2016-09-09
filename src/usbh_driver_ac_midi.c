@@ -30,34 +30,9 @@
 #include <libopencm3/usb/audio.h>
 #include <libopencm3/usb/usbstd.h>
 
-
-static void *init(void *usbh_dev);
-static bool analyze_descriptor(void *drvdata, void *descriptor);
-static void poll(void *drvdata, uint32_t tflp);
-static void remove(void *drvdata);
-
 static midi_device_t midi_device[USBH_AC_MIDI_MAX_DEVICES];
 static const midi_config_t *midi_config = NULL;
 static bool initialized = false;
-
-static const usbh_dev_driver_info_t usbh_midi_driver_info = {
-	.deviceClass = -1,
-	.deviceSubClass = -1,
-	.deviceProtocol = -1,
-	.idVendor = -1,
-	.idProduct = -1,
-	.ifaceClass = 0x01,
-	.ifaceSubClass = 0x03,
-	.ifaceProtocol = -1,
-};
-
-const usbh_dev_driver_t usbh_midi_driver = {
-	.init = init,
-	.analyze_descriptor = analyze_descriptor,
-	.poll = poll,
-	.remove = remove,
-	.info = &usbh_midi_driver_info
-};
 
 void midi_driver_init(const midi_config_t *config)
 {
@@ -72,7 +47,7 @@ void midi_driver_init(const midi_config_t *config)
  *
  *
  */
-static void *init(void *usbh_dev)
+static void *init(usbh_device_t *usbh_dev)
 {
 	if (!midi_config || !initialized) {
 		LOG_PRINTF("\n%s/%d : driver not initialized\n", __FILE__, __LINE__);
@@ -367,3 +342,22 @@ static void remove(void *drvdata)
 	midi->endpoint_in_address = 0;
 	midi->endpoint_out_address = 0;
 }
+
+static const usbh_dev_driver_info_t usbh_midi_driver_info = {
+	.deviceClass = -1,
+	.deviceSubClass = -1,
+	.deviceProtocol = -1,
+	.idVendor = -1,
+	.idProduct = -1,
+	.ifaceClass = 0x01,
+	.ifaceSubClass = 0x03,
+	.ifaceProtocol = -1,
+};
+
+const usbh_dev_driver_t usbh_midi_driver = {
+	.init = init,
+	.analyze_descriptor = analyze_descriptor,
+	.poll = poll,
+	.remove = remove,
+	.info = &usbh_midi_driver_info
+};

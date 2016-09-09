@@ -78,6 +78,7 @@ enum HID_TYPE hid_get_type(uint8_t device_id);
  */
 bool hid_is_connected(uint8_t device_id);
 
+typedef struct _usbh_dev_driver usbh_dev_driver_t;
 extern const usbh_dev_driver_t usbh_hid_driver;
 
 END_DECLS

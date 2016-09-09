@@ -71,6 +71,7 @@ typedef struct _gp_xbox_config gp_xbox_config_t;
  */
 void gp_xbox_driver_init(const gp_xbox_config_t *config);
 
+typedef struct _usbh_dev_driver usbh_dev_driver_t;
 extern const usbh_dev_driver_t usbh_gp_xbox_driver;
 
 END_DECLS
