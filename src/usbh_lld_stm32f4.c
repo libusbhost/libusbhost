@@ -47,7 +47,6 @@ struct _channel {
 	enum CHANNEL_STATE state;
 	usbh_packet_t packet;
 	uint32_t data_index; //used in receive function
-	uint8_t error_count;
 };
 typedef struct _channel channel_t;
 
@@ -918,7 +917,6 @@ static int8_t get_free_channel(void *drvdata)
 				OTG_HCINTMSK_CHHM | OTG_HCINTMSK_STALLM |
 				OTG_HCINTMSK_FRMORM;
 			REBASE(OTG_HAINTMSK) |= (1 << i);
-			dev->channels[i].error_count = 0;
 			return i;
 		}
 	}
