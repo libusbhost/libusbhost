@@ -143,34 +143,31 @@ static void init(void *drvdata)
 	REBASE(OTG_GUSBCFG) |= OTG_GUSBCFG_PHYSEL;
 }
 
+static uint32_t usbh_to_stm32_endpoint_type(enum USBH_ENDPOINT_TYPE usbh_eptyp)
+{
+	switch (usbh_eptyp) {
+	case USBH_ENDPOINT_TYPE_CONTROL: return OTG_HCCHAR_EPTYP_CONTROL;
+	case USBH_ENDPOINT_TYPE_BULK: return OTG_HCCHAR_EPTYP_BULK;
+
+	// Use bulk transfer also for interrupt, since no difference is on protocol layer
+	// Except different behaviour of the core
+	case USBH_ENDPOINT_TYPE_INTERRUPT: return OTG_HCCHAR_EPTYP_BULK;
+	case USBH_ENDPOINT_TYPE_ISOCHRONOUS: return OTG_HCCHAR_EPTYP_ISOCHRONOUS;
+	default:
+		LOG_PRINTF("\n\n\n\nWRONG EP TYPE\n\n\n\n\n");
+		return OTG_HCCHAR_EPTYP_CONTROL;
+	}
+}
+
 static void stm32f4_usbh_port_channel_setup(
-	void *drvdata, uint32_t channel, uint32_t address,
-	uint32_t eptyp, uint32_t epnum, uint32_t epdir,
-	uint32_t max_packet_size)
+	void *drvdata, uint32_t channel, uint32_t epdir)
 {
 	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
 	channel_t *channels = dev->channels;
-
-	// TODO: maybe to function
-	switch (eptyp) {
-	case USBH_ENDPOINT_TYPE_CONTROL:
-		eptyp = OTG_HCCHAR_EPTYP_CONTROL;
-		break;
-	case USBH_ENDPOINT_TYPE_BULK:
-		eptyp = OTG_HCCHAR_EPTYP_BULK;
-		break;
-	case USBH_ENDPOINT_TYPE_INTERRUPT:
-		// Use bulk transfer also for interrupt, since no difference is on protocol layer
-		// Except different behaviour of the core
-		eptyp = OTG_HCCHAR_EPTYP_BULK;
-		break;
-	case USBH_ENDPOINT_TYPE_ISOCHRONOUS:
-		eptyp = OTG_HCCHAR_EPTYP_ISOCHRONOUS;
-		break;
-	default:
-		LOG_PRINTF("\n\n\n\nWRONG EP TYPE\n\n\n\n\n");
-		return;
-	}
+	uint32_t max_packet_size = channels[channel].packet.endpoint_size_max;
+	uint32_t address = channels[channel].packet.address;
+	uint32_t epnum = channels[channel].packet.endpoint_address;
+	uint32_t eptyp = usbh_to_stm32_endpoint_type(channels[channel].packet.endpoint_type);
 
 	uint32_t speed = 0;
 	if (channels[channel].packet.speed == USBH_SPEED_LOW) {
@@ -227,12 +224,7 @@ static void read(void *drvdata, usbh_packet_t *packet)
 
 	REBASE_CH(OTG_HCTSIZ, channel) = dpid | (num_packets << 19) | packet->datalen;
 
-	stm32f4_usbh_port_channel_setup(dev, channel,
-									packet->address,
-									packet->endpoint_type,
-									packet->endpoint_address,
-									OTG_HCCHAR_EPDIR_IN,
-									packet->endpoint_size_max);
+	stm32f4_usbh_port_channel_setup(dev, channel, OTG_HCCHAR_EPDIR_IN);
 }
 
 /**
@@ -284,12 +276,7 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 	}
 	REBASE_CH(OTG_HCTSIZ, channel) = dpid | (num_packets << 19) | packet->datalen;
 
-	stm32f4_usbh_port_channel_setup(dev, channel,
-									packet->address,
-									packet->endpoint_type,
-									packet->endpoint_address,
-									OTG_HCCHAR_EPDIR_OUT,
-									packet->endpoint_size_max);
+	stm32f4_usbh_port_channel_setup(dev, channel, OTG_HCCHAR_EPDIR_OUT);
 
 	if (packet->endpoint_type == USBH_ENDPOINT_TYPE_CONTROL ||
 		packet->endpoint_type == USBH_ENDPOINT_TYPE_BULK) {
