@@ -310,7 +310,6 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 	(void)time_curr_us;
 
 	gp_xbox_device_t *gp_xbox = (gp_xbox_device_t *)drvdata;
-	usbh_device_t *dev = gp_xbox->usbh_device;
 
 	switch (gp_xbox->state_next) {
 	case STATE_READING_REQUEST:
