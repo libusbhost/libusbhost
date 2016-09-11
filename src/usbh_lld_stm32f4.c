@@ -178,7 +178,7 @@ static void stm32f4_usbh_port_channel_setup(
 				OTG_HCCHAR_MCNT_1 |
 				(OTG_HCCHAR_EPTYP_MASK & (eptyp)) |
 				(speed) |
-				(epdir) |
+				(OTG_HCCHAR_EPDIR_MASK & epdir) |
 				(OTG_HCCHAR_EPNUM_MASK & (epnum << 11)) |
 				(OTG_HCCHAR_MPSIZ_MASK & max_packet_size);
 
