@@ -18,6 +18,7 @@ add_library (usbhost
 	${inc}/usbh_driver_hub.h
 	${inc}/usbh_lld_stm32f4.h
 	${inc}/driver/usbh_device_driver.h
+	${inc}/usbh_config.h
 
 	usbh_core.c
 	usbh_driver_ac_midi.c
