@@ -47,7 +47,6 @@ struct _channel {
 	enum CHANNEL_STATE state;
 	usbh_packet_t packet;
 	uint32_t data_index; //used in receive function
-	uint8_t error_count;
 };
 typedef struct _channel channel_t;
 
@@ -143,34 +142,31 @@ static void init(void *drvdata)
 	REBASE(OTG_GUSBCFG) |= OTG_GUSBCFG_PHYSEL;
 }
 
+static uint32_t usbh_to_stm32_endpoint_type(enum USBH_ENDPOINT_TYPE usbh_eptyp)
+{
+	switch (usbh_eptyp) {
+	case USBH_ENDPOINT_TYPE_CONTROL: return OTG_HCCHAR_EPTYP_CONTROL;
+	case USBH_ENDPOINT_TYPE_BULK: return OTG_HCCHAR_EPTYP_BULK;
+
+	// Use bulk transfer also for interrupt, since no difference is on protocol layer
+	// Except different behaviour of the core
+	case USBH_ENDPOINT_TYPE_INTERRUPT: return OTG_HCCHAR_EPTYP_BULK;
+	case USBH_ENDPOINT_TYPE_ISOCHRONOUS: return OTG_HCCHAR_EPTYP_ISOCHRONOUS;
+	default:
+		LOG_PRINTF("\n\n\n\nWRONG EP TYPE\n\n\n\n\n");
+		return OTG_HCCHAR_EPTYP_CONTROL;
+	}
+}
+
 static void stm32f4_usbh_port_channel_setup(
-	void *drvdata, uint32_t channel, uint32_t address,
-	uint32_t eptyp, uint32_t epnum, uint32_t epdir,
-	uint32_t max_packet_size)
+	void *drvdata, uint32_t channel, uint32_t epdir)
 {
 	usbh_lld_stm32f4_driver_data_t *dev = drvdata;
 	channel_t *channels = dev->channels;
-
-	// TODO: maybe to function
-	switch (eptyp) {
-	case USBH_ENDPOINT_TYPE_CONTROL:
-		eptyp = OTG_HCCHAR_EPTYP_CONTROL;
-		break;
-	case USBH_ENDPOINT_TYPE_BULK:
-		eptyp = OTG_HCCHAR_EPTYP_BULK;
-		break;
-	case USBH_ENDPOINT_TYPE_INTERRUPT:
-		// Use bulk transfer also for interrupt, since no difference is on protocol layer
-		// Except different behaviour of the core
-		eptyp = OTG_HCCHAR_EPTYP_BULK;
-		break;
-	case USBH_ENDPOINT_TYPE_ISOCHRONOUS:
-		eptyp = OTG_HCCHAR_EPTYP_ISOCHRONOUS;
-		break;
-	default:
-		LOG_PRINTF("\n\n\n\nWRONG EP TYPE\n\n\n\n\n");
-		return;
-	}
+	uint32_t max_packet_size = channels[channel].packet.endpoint_size_max;
+	uint32_t address = channels[channel].packet.address;
+	uint32_t epnum = channels[channel].packet.endpoint_address;
+	uint32_t eptyp = usbh_to_stm32_endpoint_type(channels[channel].packet.endpoint_type);
 
 	uint32_t speed = 0;
 	if (channels[channel].packet.speed == USBH_SPEED_LOW) {
@@ -182,7 +178,7 @@ static void stm32f4_usbh_port_channel_setup(
 				OTG_HCCHAR_MCNT_1 |
 				(OTG_HCCHAR_EPTYP_MASK & (eptyp)) |
 				(speed) |
-				(epdir) |
+				(OTG_HCCHAR_EPDIR_MASK & epdir) |
 				(OTG_HCCHAR_EPNUM_MASK & (epnum << 11)) |
 				(OTG_HCCHAR_MPSIZ_MASK & max_packet_size);
 
@@ -227,12 +223,7 @@ static void read(void *drvdata, usbh_packet_t *packet)
 
 	REBASE_CH(OTG_HCTSIZ, channel) = dpid | (num_packets << 19) | packet->datalen;
 
-	stm32f4_usbh_port_channel_setup(dev, channel,
-									packet->address,
-									packet->endpoint_type,
-									packet->endpoint_address,
-									OTG_HCCHAR_EPDIR_IN,
-									packet->endpoint_size_max);
+	stm32f4_usbh_port_channel_setup(dev, channel, OTG_HCCHAR_EPDIR_IN);
 }
 
 /**
@@ -284,18 +275,13 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 	}
 	REBASE_CH(OTG_HCTSIZ, channel) = dpid | (num_packets << 19) | packet->datalen;
 
-	stm32f4_usbh_port_channel_setup(dev, channel,
-									packet->address,
-									packet->endpoint_type,
-									packet->endpoint_address,
-									OTG_HCCHAR_EPDIR_OUT,
-									packet->endpoint_size_max);
+	stm32f4_usbh_port_channel_setup(dev, channel, OTG_HCCHAR_EPDIR_OUT);
 
 	if (packet->endpoint_type == USBH_ENDPOINT_TYPE_CONTROL ||
 		packet->endpoint_type == USBH_ENDPOINT_TYPE_BULK) {
 
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) + RX_FIFO_SIZE;
-		const uint32_t * buf32 = packet->data;
+		const uint32_t * buf32 = packet->data.out;
 		int i;
 		LOG_PRINTF("\nSending[%d]: ", packet->datalen);
 		for(i = packet->datalen; i >= 4; i-=4) {
@@ -317,7 +303,7 @@ static void write(void *drvdata, const usbh_packet_t *packet)
 	} else {
 		volatile uint32_t *fifo = &REBASE_CH(OTG_FIFO, channel) +
 			RX_FIFO_SIZE + TX_NP_FIFO_SIZE;
-		const uint32_t * buf32 = packet->data;
+		const uint32_t * buf32 = packet->data.out;
 		int i;
 		for(i = packet->datalen; i > 0; i-=4) {
 			*fifo++ = *buf32++;
@@ -334,7 +320,7 @@ static void rxflvl_handle(void *drvdata)
 	uint8_t channel = rxstsp&0xf;
 	uint32_t len = (rxstsp>>4) & 0x1ff;
 	if ((rxstsp&OTG_GRXSTSP_PKTSTS_MASK) == OTG_GRXSTSP_PKTSTS_IN) {
-		uint8_t *data = channels[channel].packet.data;
+		uint8_t *data = channels[channel].packet.data.in;
 		uint32_t *buf32 = (uint32_t *)&data[channels[channel].data_index];
 
 		int32_t i;
@@ -366,7 +352,7 @@ static void rxflvl_handle(void *drvdata)
 		uint32_t i;
 		LOG_PRINTF("\nDATA: ");
 		for (i = 0; i < channels[channel].data_index; i++) {
-			uint8_t *data = channels[channel].packet.data;
+			uint8_t *data = channels[channel].packet.data.in;
 			LOG_PRINTF("%02X ", data[i]);
 		}
 #endif
@@ -504,9 +490,17 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 
 				if (hcint & OTG_HCINT_NAK) {
 					REBASE_CH(OTG_HCINT, channel) = OTG_HCINT_NAK;
-					LOG_PRINTF("NAK");
+					LOG_PRINTF("NAK\n");
 
-					REBASE_CH(OTG_HCCHAR, channel) |= OTG_HCCHAR_CHENA;
+					free_channel(dev, channel);
+
+					usbh_packet_callback_data_t cb_data;
+					cb_data.status = USBH_PACKET_CALLBACK_STATUS_EAGAIN;
+					cb_data.transferred_length = channels[channel].data_index;
+
+					channels[channel].packet.callback(
+						channels[channel].packet.callback_arg,
+						cb_data);
 
 				}
 
@@ -540,6 +534,8 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 					REBASE_CH(OTG_HCINT, channel) = OTG_HCINT_FRMOR;
 					LOG_PRINTF("FRMOR");
 
+					free_channel(dev, channel);
+
 					usbh_packet_callback_data_t cb_data;
 					cb_data.status = USBH_PACKET_CALLBACK_STATUS_EFATAL;
 					cb_data.transferred_length = 0;
@@ -547,7 +543,6 @@ static enum USBH_POLL_STATUS poll_run(usbh_lld_stm32f4_driver_data_t *dev)
 					channels[channel].packet.callback(
 						channels[channel].packet.callback_arg,
 						cb_data);
-					free_channel(dev, channel);
 				}
 
 				if (hcint & OTG_HCINT_TXERR) {
@@ -922,7 +917,6 @@ static int8_t get_free_channel(void *drvdata)
 				OTG_HCINTMSK_CHHM | OTG_HCINTMSK_STALLM |
 				OTG_HCINTMSK_FRMORM;
 			REBASE(OTG_HAINTMSK) |= (1 << i);
-			dev->channels[i].error_count = 0;
 			return i;
 		}
 	}
@@ -1013,7 +1007,7 @@ static usbh_lld_stm32f4_driver_data_t driver_data_fs = {
 	.channels = channels_fs,
 	.num_channels = NUM_CHANNELS_FS
 };
-static const usbh_low_level_driver_t driver_fs = {
+const usbh_low_level_driver_t usbh_lld_stm32f4_driver_fs = {
 	.init = init,
 	.poll = poll,
 	.read = read,
@@ -1021,7 +1015,6 @@ static const usbh_low_level_driver_t driver_fs = {
 	.root_speed = root_speed,
 	.driver_data = &driver_data_fs
 };
-const void *usbh_lld_stm32f4_driver_fs = &driver_fs;
 #endif
 
 // USB High Speed - OTG_HS
@@ -1033,7 +1026,8 @@ static usbh_lld_stm32f4_driver_data_t driver_data_hs = {
 	.channels = channels_hs,
 	.num_channels = NUM_CHANNELS_HS
 };
-static const usbh_low_level_driver_t driver_hs = {
+
+const usbh_low_level_driver_t usbh_lld_stm32f4_driver_hs = {
 	.init = init,
 	.poll = poll,
 	.read = read,
@@ -1041,5 +1035,5 @@ static const usbh_low_level_driver_t driver_hs = {
 	.root_speed = root_speed,
 	.driver_data = &driver_data_hs
 };
-const void *usbh_lld_stm32f4_driver_hs = &driver_hs;
+
 #endif

@@ -24,38 +24,15 @@
 #include "usbh_driver_ac_midi_private.h"
 #include "usart_helpers.h"
 
+#include <stddef.h>
+
 #include <libopencm3/usb/midi.h>
 #include <libopencm3/usb/audio.h>
 #include <libopencm3/usb/usbstd.h>
 
-
-static void *midi_init(void *usbh_dev);
-static bool midi_analyze_descriptor(void *drvdata, void *descriptor);
-static void midi_poll(void *drvdata, uint32_t tflp);
-static void midi_remove(void *drvdata);
-
 static midi_device_t midi_device[USBH_AC_MIDI_MAX_DEVICES];
-static const midi_config_t *midi_config = 0;
+static const midi_config_t *midi_config = NULL;
 static bool initialized = false;
-
-static const usbh_dev_driver_info_t usbh_midi_driver_info = {
-	.deviceClass = -1,
-	.deviceSubClass = -1,
-	.deviceProtocol = -1,
-	.idVendor = -1,
-	.idProduct = -1,
-	.ifaceClass = 0x01,
-	.ifaceSubClass = 0x03,
-	.ifaceProtocol = -1,
-};
-
-const usbh_dev_driver_t usbh_midi_driver = {
-	.init = midi_init,
-	.analyze_descriptor = midi_analyze_descriptor,
-	.poll = midi_poll,
-	.remove = midi_remove,
-	.info = &usbh_midi_driver_info
-};
 
 void midi_driver_init(const midi_config_t *config)
 {
@@ -70,14 +47,14 @@ void midi_driver_init(const midi_config_t *config)
  *
  *
  */
-static void *midi_init(void *usbh_dev)
+static void *init(usbh_device_t *usbh_dev)
 {
 	if (!midi_config || !initialized) {
 		LOG_PRINTF("\n%s/%d : driver not initialized\n", __FILE__, __LINE__);
 		return 0;
 	}
 	uint32_t i;
-	midi_device_t *drvdata = 0;
+	midi_device_t *drvdata = NULL;
 
 	// find free data space for midi device
 	for (i = 0; i < USBH_AC_MIDI_MAX_DEVICES; i++) {
@@ -89,7 +66,7 @@ static void *midi_init(void *usbh_dev)
 			drvdata->endpoint_in_toggle = 0;
 			drvdata->endpoint_out_toggle = 0;
 			drvdata->usbh_device = usbh_dev;
-			drvdata->write_callback_user = 0;
+			drvdata->write_callback_user = NULL;
 			drvdata->sending = false;
 			break;
 		}
@@ -101,7 +78,7 @@ static void *midi_init(void *usbh_dev)
 /**
  * Returns true if all needed data are parsed
  */
-static bool midi_analyze_descriptor(void *drvdata, void *descriptor)
+static bool analyze_descriptor(void *drvdata, void *descriptor)
 {
 	midi_device_t *midi = drvdata;
 	uint8_t desc_type = ((uint8_t *)descriptor)[1];
@@ -186,12 +163,13 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t status)
 				midi_in_message(midi, midi->endpoint_in_maxpacketsize);
 				midi->state = 25;
 				break;
+
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				midi_in_message(midi, status.transferred_length);
 				midi->state = 25;
 				break;
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+
+			default:
 				LOG_PRINTF("FATAL ERROR, MIDI DRIVER DEAD \n");
 				//~ dev->drv->remove();
 				midi->state = 0;
@@ -206,30 +184,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t status)
 			LOG_PRINTF("\n CAN'T TOUCH THIS... ignoring data\n");
 		}
 		break;
-	case 2:
-		{
-			LOG_PRINTF("|empty packet read|");
-			if (status.status == USBH_PACKET_CALLBACK_STATUS_OK) {
-				midi->state++;
-				device_xfer_control_read(0, 0, event, dev);
-			}
-		}
-		break;
-	case 3: // Configured
-		{
-			if (status.status == USBH_PACKET_CALLBACK_STATUS_OK) {
-				midi->state = 100;
 
-				midi->endpoint_in_toggle = 0;
-				LOG_PRINTF("\nMIDI CONFIGURED\n");
-
-				// Notify user
-				if (midi_config->notify_connected) {
-					midi_config->notify_connected(midi->device_id);
-				}
-			}
-		}
-		break;
 	default:
 		break;
 	}
@@ -242,7 +197,7 @@ static void read_midi_in(void *drvdata, const uint8_t nextstate)
 	usbh_packet_t packet;
 
 	packet.address = midi->usbh_device->address;
-	packet.data = &midi->buffer[0];
+	packet.data.in = &midi->buffer[0];
 	packet.datalen = midi->endpoint_in_maxpacketsize;
 	packet.endpoint_address = midi->endpoint_in_address;
 	packet.endpoint_size_max = midi->endpoint_in_maxpacketsize;
@@ -260,12 +215,11 @@ static void read_midi_in(void *drvdata, const uint8_t nextstate)
  * 
  *  @param t_us global time us
  */
-static void midi_poll(void *drvdata, uint32_t t_us)
+static void poll(void *drvdata, uint32_t t_us)
 {
 	(void)drvdata;
 
 	midi_device_t *midi = drvdata;
-	usbh_device_t *dev = midi->usbh_device;
 	switch (midi->state) {
 
 	/// Upon configuration, some controllers send additional error data
@@ -276,11 +230,13 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 			midi->state = 101;
 		}
 		break;
+
 	case 101:
 		{
 			read_midi_in(drvdata, 102);
 		}
 		break;
+
 	case 102:
 		{
 			// if elapsed MIDI initial delay microseconds
@@ -289,6 +245,7 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 			}
 		}
 		break;
+
 	case 25:
 		{
 			read_midi_in(drvdata, 26);
@@ -297,18 +254,15 @@ static void midi_poll(void *drvdata, uint32_t t_us)
 
 	case 1:
 		{
-			//~ LOG_PRINTF("CFGVAL: %d\n", dev->config_val);
-			struct usb_setup_data setup_data;
+			midi->state = 100;
 
-			setup_data.bmRequestType = 0b00000000;
-			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
-			setup_data.wValue = midi->buffer[0];
-			setup_data.wIndex = 0;
-			setup_data.wLength = 0;
+			midi->endpoint_in_toggle = 0;
+			LOG_PRINTF("\nMIDI CONFIGURED\n");
 
-			midi->state++;
-
-			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+			// Notify user
+			if (midi_config->notify_connected) {
+				midi_config->notify_connected(midi->device_id);
+			}
 		}
 		break;
 	}
@@ -362,7 +316,7 @@ void usbh_midi_write(uint8_t device_id, const void *data, uint32_t length, midi_
 	midi->sending = true;
 	midi->write_callback_user = callback;
 
-	midi->write_packet.data = (void*)data;	// it is safe cast since we are writing and function usbh_write cannot modify data
+	midi->write_packet.data.out = data;
 	midi->write_packet.datalen = length;
 	midi->write_packet.address = dev->address;
 	midi->write_packet.endpoint_address = midi->endpoint_out_address;
@@ -377,7 +331,7 @@ void usbh_midi_write(uint8_t device_id, const void *data, uint32_t length, midi_
 	usbh_write(dev, &midi->write_packet);
 }
 
-static void midi_remove(void *drvdata)
+static void remove(void *drvdata)
 {
 	midi_device_t *midi = drvdata;
 
@@ -389,3 +343,22 @@ static void midi_remove(void *drvdata)
 	midi->endpoint_in_address = 0;
 	midi->endpoint_out_address = 0;
 }
+
+static const usbh_dev_driver_info_t usbh_midi_driver_info = {
+	.deviceClass = -1,
+	.deviceSubClass = -1,
+	.deviceProtocol = -1,
+	.idVendor = -1,
+	.idProduct = -1,
+	.ifaceClass = 0x01,
+	.ifaceSubClass = 0x03,
+	.ifaceProtocol = -1,
+};
+
+const usbh_dev_driver_t usbh_midi_driver = {
+	.init = init,
+	.analyze_descriptor = analyze_descriptor,
+	.poll = poll,
+	.remove = remove,
+	.info = &usbh_midi_driver_info
+};

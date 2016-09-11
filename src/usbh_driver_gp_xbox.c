@@ -30,11 +30,9 @@
 
 enum STATES {
 	STATE_INACTIVE,
-	STATE_READING_COMPLETE,
+	STATE_INITIAL,
 	STATE_READING_REQUEST,
-	STATE_SET_CONFIGURATION_REQUEST,
-	STATE_SET_CONFIGURATION_EMPTY_READ,
-	STATE_SET_CONFIGURATION_COMPLETE
+	STATE_READING_COMPLETE,
 };
 
 #define GP_XBOX_CORRECT_TRANSFERRED_LENGTH 20
@@ -74,7 +72,7 @@ void gp_xbox_driver_init(const gp_xbox_config_t *config)
  *
  *
  */
-static void *init(void *usbh_dev)
+static void *init(usbh_device_t *usbh_dev)
 {
 	if (!initialized) {
 		LOG_PRINTF("\n%s/%d : driver not initialized\n", __FILE__, __LINE__);
@@ -91,7 +89,7 @@ static void *init(void *usbh_dev)
 			drvdata->device_id = i;
 			drvdata->endpoint_in_address = 0;
 			drvdata->endpoint_in_toggle = 0;
-			drvdata->usbh_device = (usbh_device_t *)usbh_dev;
+			drvdata->usbh_device = usbh_dev;
 			break;
 		}
 	}
@@ -132,7 +130,7 @@ static bool analyze_descriptor(void *drvdata, void *descriptor)
 				}
 
 				if (gp_xbox->endpoint_in_address) {
-					gp_xbox->state_next = STATE_SET_CONFIGURATION_REQUEST;
+					gp_xbox->state_next = STATE_INITIAL;
 					return true;
 				}
 			}
@@ -259,47 +257,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				gp_xbox->state_next = STATE_READING_REQUEST;
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-				ERROR(cb_data.status);
-				gp_xbox->state_next = STATE_INACTIVE;
-				break;
-			}
-		}
-		break;
-
-	case STATE_SET_CONFIGURATION_EMPTY_READ:
-		{
-			LOG_PRINTF("|empty packet read|");
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				gp_xbox->state_next = STATE_SET_CONFIGURATION_COMPLETE;
-				device_xfer_control_read(0, 0, event, dev);
-				break;
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-				ERROR(cb_data.status);
-				gp_xbox->state_next = STATE_INACTIVE;
-				break;
-			}
-		}
-		break;
-	case STATE_SET_CONFIGURATION_COMPLETE: // Configured
-		{
-			switch (cb_data.status) {
-			case USBH_PACKET_CALLBACK_STATUS_OK:
-				gp_xbox->state_next = STATE_READING_REQUEST;
-				gp_xbox->endpoint_in_toggle = 0;
-				LOG_PRINTF("\ngp_xbox CONFIGURED\n");
-				if (gp_xbox_config->notify_connected) {
-					gp_xbox_config->notify_connected(gp_xbox->device_id);
-				}
-				break;
-
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				ERROR(cb_data.status);
 				gp_xbox->state_next = STATE_INACTIVE;
 				break;
@@ -326,7 +284,7 @@ static void read_gp_xbox_in(gp_xbox_device_t *gp_xbox)
 	usbh_packet_t packet;
 
 	packet.address = gp_xbox->usbh_device->address;
-	packet.data = &gp_xbox->buffer[0];
+	packet.data.in = &gp_xbox->buffer[0];
 	packet.datalen = gp_xbox->endpoint_in_maxpacketsize;
 	packet.endpoint_address = gp_xbox->endpoint_in_address;
 	packet.endpoint_size_max = gp_xbox->endpoint_in_maxpacketsize;
@@ -351,7 +309,6 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 	(void)time_curr_us;
 
 	gp_xbox_device_t *gp_xbox = (gp_xbox_device_t *)drvdata;
-	usbh_device_t *dev = gp_xbox->usbh_device;
 
 	switch (gp_xbox->state_next) {
 	case STATE_READING_REQUEST:
@@ -360,19 +317,14 @@ static void poll(void *drvdata, uint32_t time_curr_us)
 		}
 		break;
 
-	case STATE_SET_CONFIGURATION_REQUEST:
+	case STATE_INITIAL:
 		{
-			struct usb_setup_data setup_data;
-
-			setup_data.bmRequestType = 0b00000000;
-			setup_data.bRequest = USB_REQ_SET_CONFIGURATION;
-			setup_data.wValue = gp_xbox->configuration_value;
-			setup_data.wIndex = 0;
-			setup_data.wLength = 0;
-
-			gp_xbox->state_next = STATE_SET_CONFIGURATION_EMPTY_READ;
-
-			device_xfer_control_write_setup(&setup_data, sizeof(setup_data), event, dev);
+			gp_xbox->state_next = STATE_READING_REQUEST;
+			gp_xbox->endpoint_in_toggle = 0;
+			LOG_PRINTF("\ngp_xbox CONFIGURED\n");
+			if (gp_xbox_config->notify_connected) {
+				gp_xbox_config->notify_connected(gp_xbox->device_id);
+			}
 		}
 		break;
 

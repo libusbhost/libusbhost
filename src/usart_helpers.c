@@ -22,14 +22,15 @@
 
 
 #include "usart_helpers.h"
+#define TINYPRINTF_OVERRIDE_LIBC 0
+#define TINYPRINTF_DEFINE_TFP_SPRINTF 0
+#include "tinyprintf.h"
 
 #include <string.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <libopencm3/stm32/usart.h>
-#include <libopencm3/stm32/gpio.h>
-
 
 #define USART_FIFO_OUT_SIZE (4096)
 uint8_t usart_fifo_out_data[USART_FIFO_OUT_SIZE];
@@ -103,34 +104,21 @@ static void usart_fifo_in_push(uint8_t aData)
 	usart_fifo_in_len++;
 }
 
-
-static void usart_write(const char * data, uint32_t len)
+static void putf(void *arg, char c)
 {
-    uint32_t i;
-    for(i = 0; i < len; i++)
-    {
-        usart_fifo_push(data[i]);
-    }
+	//unused argument
+	(void)arg;
+
+	usart_fifo_push(c);
 }
+
 void usart_printf(const char *str, ...)
 {
 	va_list va;
 	va_start(va, str);
-	usart_vprintf(str, va);
+	tfp_format(NULL, putf, str, va);
 	va_end(va);
-
 }
-
-void usart_vprintf(const char *str, va_list va)
-{
-	char databuffer[128];
-	int i = vsnprintf(databuffer, 128, str, va);
-	if (i > 0) {
-		usart_write(databuffer, i);
-	}
-}
-
-
 
 void usart_init(uint32_t arg_usart, uint32_t baudrate)
 {
@@ -145,6 +133,7 @@ void usart_init(uint32_t arg_usart, uint32_t baudrate)
 	usart_enable(arg_usart);
 	usart = arg_usart;
 }
+
 void usart_interrupt(void)
 {
 	if (usart_get_interrupt_source(usart, USART_SR_RXNE)) {
@@ -230,9 +219,7 @@ void usart_call_cmd(struct usart_commands * commands)
 		LOG_PRINTF("#2");
 		return;
 	}
-	//~ for (i = 0; i < command_len; i++) {
-		//~ LOG_PRINTF("%c", command[i]);
-	//~ }
+
 	i=0;
 	while(commands[i].cmd != NULL) {
 		if (!strcmp((char*)command, (char*)commands[i].cmd)) {
@@ -243,7 +230,7 @@ void usart_call_cmd(struct usart_commands * commands)
 					commands[i].callback(&command[command_argindex]);
 				}
 			}
-			usart_write("\n>>",4);
+			LOG_PRINTF("\n>>");
 			command_len = 0;
 			command_argindex = 0;
 			return;
