@@ -110,10 +110,6 @@ struct _usbh_control {
 };
 typedef struct _usbh_control usbh_control_t;
 
-
-//forward declare usbh_dev_driver_t
-typedef struct _usbh_dev_driver usbh_dev_driver_t;
-
 /**
  * @brief The _usbh_device struct
  *
