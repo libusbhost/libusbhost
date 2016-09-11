@@ -187,8 +187,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 			}
 			break;
 
-		case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-		case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+		default:
 			ERROR(cb_data.status);
 			hub->state = EVENT_STATE_NONE;
 			break;
@@ -262,8 +261,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+			default:
 				ERROR(cb_data.status);
 				break;
 			}
@@ -308,9 +306,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				ERROR(cb_data.status);
 				break;
 			}
@@ -343,9 +339,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				ERROR(cb_data.status);
 				break;
 			}
@@ -414,9 +408,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				ERROR(cb_data.status);
 				// continue
 				hub->state = EVENT_STATE_POLL_REQ;
@@ -460,9 +452,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				ERROR(cb_data.status);
 				// continue
 				hub->state = EVENT_STATE_POLL_REQ;
@@ -531,9 +521,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				ERROR(cb_data.status);
 				// continue
 				hub->state = EVENT_STATE_POLL_REQ;

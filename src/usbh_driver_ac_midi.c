@@ -163,12 +163,13 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t status)
 				midi_in_message(midi, midi->endpoint_in_maxpacketsize);
 				midi->state = 25;
 				break;
+
 			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
 				midi_in_message(midi, status.transferred_length);
 				midi->state = 25;
 				break;
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+
+			default:
 				LOG_PRINTF("FATAL ERROR, MIDI DRIVER DEAD \n");
 				//~ dev->drv->remove();
 				midi->state = 0;

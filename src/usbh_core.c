@@ -408,9 +408,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 			CONTINUE_WITH(USBH_ENUM_STATE_DEVICE_DT_READ_SETUP);
 			break;
 
-		case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-		case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-		case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+		default:
 			device_enumeration_terminate(dev);
 			ERROR(cb_data.status);
 			break;
@@ -458,8 +456,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+			default:
 				device_enumeration_terminate(dev);
 				ERROR(cb_data.status);
 				break;
@@ -492,9 +489,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 					dev->packet_size_max0, device_enumerate, dev);
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				device_enumeration_terminate(dev);
 				ERROR(cb_data.status);
 				break;
@@ -520,8 +515,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
+			default:
 				device_enumeration_terminate(dev);
 				ERROR(cb_data.status);
 				break;
@@ -560,9 +554,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				device_enumeration_terminate(dev);
 				ERROR(cb_data.status);
 				break;
@@ -583,9 +575,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				}
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				device_enumeration_terminate(dev);
 				ERROR(cb_data.status);
 				break;
@@ -619,9 +609,7 @@ static void device_enumerate(usbh_device_t *dev, usbh_packet_callback_data_t cb_
 				CONTINUE_WITH(USBH_ENUM_STATE_FIND_DRIVER);
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
+			default:
 				device_enumeration_terminate(dev);
 				ERROR(cb_data.status);
 				break;

@@ -231,8 +231,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				hid->state_next = STATE_READING_REQUEST;
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+			default:
 				ERROR(cb_data.status);
 				hid->state_next = STATE_INACTIVE;
 				break;
@@ -251,9 +250,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				parse_report_descriptor(hid, hid->buffer, cb_data.transferred_length);
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_ERRSIZ:
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+			default:
 				ERROR(cb_data.status);
 				hid->state_next = STATE_INACTIVE;
 				break;

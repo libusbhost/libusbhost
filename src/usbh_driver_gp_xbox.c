@@ -257,8 +257,7 @@ static void event(usbh_device_t *dev, usbh_packet_callback_data_t cb_data)
 				gp_xbox->state_next = STATE_READING_REQUEST;
 				break;
 
-			case USBH_PACKET_CALLBACK_STATUS_EFATAL:
-			case USBH_PACKET_CALLBACK_STATUS_EAGAIN:
+			default:
 				ERROR(cb_data.status);
 				gp_xbox->state_next = STATE_INACTIVE;
 				break;
