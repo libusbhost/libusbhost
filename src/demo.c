@@ -30,6 +30,7 @@
 
  // STM32f407 compatible
 #include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/flash.h>
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/timer.h>
@@ -48,11 +49,44 @@ static inline void delay_ms_busy_loop(uint32_t ms)
 	for (i = 0; i < 14903*ms; i++);
 }
 
+const struct rcc_clock_scale stm32f411xE_discovery = {
+    /* 96MHz */
+    .pllm = 4,   // RCC_PLLCFGR main pll division factor for VCO_Inputf = PLL input / PLLM (should end up to around 2MHz to limit pll jitter)
+    .plln = 288, // RCC_PLLCFGR main pll multiplication factor for VCOf = VCO_Inputf * PLLN
+    .pllp = 6,   // RCC_PLLCFGR main pll division factor for main system clock = VCOf / PLLP
+    .pllq = 12,  // RCC_PLLCFGR main pll division factor for USB OTG FS = VCOf / PLLQ (must result in 48 MHz to work correctly)
+    .pllr = 0,   // unused
+    .flash_config = FLASH_ACR_DCEN | FLASH_ACR_ICEN | FLASH_ACR_LATENCY_3WS,
+    .hpre = RCC_CFGR_HPRE_DIV_NONE,  // RCC_CFGR AHB Prescaler
+    .ppre1 = RCC_CFGR_PPRE_DIV_2,    // RCC_CFGR APB1 Prescaler (low speed)
+    .ppre2 = RCC_CFGR_PPRE_DIV_NONE, // RCC_CFGR APB2 Prescaler (high speed)
+    .voltage_scale = PWR_SCALE1,     // PWR_CR -> Regulator voltage scaling output selection <= 100 MHz
+    .ahb_frequency  = 96000000,
+    .apb1_frequency = 48000000,
+    .apb2_frequency = 96000000,
+
+
+    ///* 120MHz */
+    //.pllm = 8,
+    //.plln = 240,
+    //.pllp = 2,
+    //.pllq = 5,
+    //.pllr = 0,
+    //.flash_config = FLASH_ACR_DCEN | FLASH_ACR_ICEN | FLASH_ACR_LATENCY_3WS,
+    //.hpre = RCC_CFGR_HPRE_DIV_NONE,
+    //.ppre1 = RCC_CFGR_PPRE_DIV_4,
+    //.ppre2 = RCC_CFGR_PPRE_DIV_2,
+    //.voltage_scale = PWR_SCALE1,
+    //.ahb_frequency  = 120000000,
+    //.apb1_frequency = 30000000,
+    //.apb2_frequency = 60000000,
+};
 
 /* Set STM32 to 168 MHz. */
 static void clock_setup(void)
 {
-	rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
+	//rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
+	rcc_clock_setup_hse_3v3(&stm32f411xE_discovery);
 
 	// GPIO
 	rcc_periph_clock_enable(RCC_GPIOA); // OTG_FS + button
@@ -74,7 +108,7 @@ static void clock_setup(void)
 static void timer_setup(void)
 {
 	rcc_periph_reset_pulse(RST_TIM3);
-	timer_set_prescaler(TIM3, 8400 - 1);	// 84Mhz/10kHz - 1
+	timer_set_prescaler(TIM3, 4800 - 1);	// 84Mhz/10kHz - 1
 	timer_set_period(TIM3, 65535);			// Overflow in ~6.5 seconds
 	timer_enable_counter(TIM3);
 }
