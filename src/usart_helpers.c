@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/cm3/itm.h>
 
 #define USART_FIFO_OUT_SIZE (4096)
 uint8_t usart_fifo_out_data[USART_FIFO_OUT_SIZE];
@@ -147,12 +148,22 @@ void usart_interrupt(void)
 	}
 }
 
+static void ITM_SendChar(int stimulus_port, char val)
+{
+    if (!(ITM_TER[0] & (1<<stimulus_port))) {
+        return;
+    }
+    while (!(ITM_STIM8(stimulus_port) & ITM_STIM_FIFOREADY));
+    ITM_STIM8(stimulus_port) = val;
+}
+
 void usart_fifo_send(void)
 {
 	while(usart_fifo_out_len) {
 		uint8_t data = usart_fifo_pop();
 		usart_wait_send_ready(usart);
 		usart_send(usart, data);
+		ITM_SendChar(0, data);
 	}
 }
 static char command[128];

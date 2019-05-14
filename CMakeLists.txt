@@ -14,7 +14,7 @@ project (libusbhost C)
 # Declare cached variables
 
 set (USE_STM32F4_FS TRUE CACHE BOOL "Use USB full speed (FS) host periphery")
-set (USE_STM32F4_HS TRUE CACHE BOOL "Use USB high speed (HS) host periphery")
+set (USE_STM32F4_HS FALSE CACHE BOOL "Use USB high speed (HS) host periphery")
 set (USE_USART_DEBUG TRUE CACHE BOOL "Use debug uart output")
 
 # Set compiler and linker flags
