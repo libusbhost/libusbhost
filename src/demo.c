@@ -33,8 +33,9 @@
 #include <libopencm3/stm32/gpio.h>
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/stm32/timer.h>
-#include <libopencm3/stm32/otg_hs.h>
-#include <libopencm3/stm32/otg_fs.h>
+
+#include <libopencm3/usb/dwc/otg_hs.h>
+#include <libopencm3/usb/dwc/otg_fs.h>
 
 #include <stdint.h>
 #include <string.h>
@@ -51,7 +52,7 @@ static inline void delay_ms_busy_loop(uint32_t ms)
 /* Set STM32 to 168 MHz. */
 static void clock_setup(void)
 {
-	rcc_clock_setup_hse_3v3(&hse_8mhz_3v3[CLOCK_3V3_168MHZ]);
+	rcc_clock_setup_hse_3v3(&rcc_hse_8mhz_3v3[RCC_CLOCK_3V3_84MHZ]);
 
 	// GPIO
 	rcc_periph_clock_enable(RCC_GPIOA); // OTG_FS + button
@@ -63,24 +64,24 @@ static void clock_setup(void)
 	rcc_periph_clock_enable(RCC_USART6); // USART
 	rcc_periph_clock_enable(RCC_OTGFS); // OTG_FS
 	rcc_periph_clock_enable(RCC_OTGHS); // OTG_HS
-	rcc_periph_clock_enable(RCC_TIM6); // TIM6
+	rcc_periph_clock_enable(RCC_TIM3); // TIM3
 }
 
 
 /*
  * setup 10kHz timer
  */
-static void tim6_setup(void)
+static void timer_setup(void)
 {
-	timer_reset(TIM6);
-	timer_set_prescaler(TIM6, 8400 - 1);	// 84Mhz/10kHz - 1
-	timer_set_period(TIM6, 65535);			// Overflow in ~6.5 seconds
-	timer_enable_counter(TIM6);
+	rcc_periph_reset_pulse(RST_TIM3);
+	timer_set_prescaler(TIM3, 8400 - 1);	// 84Mhz/10kHz - 1
+	timer_set_period(TIM3, 65535);			// Overflow in ~6.5 seconds
+	timer_enable_counter(TIM3);
 }
 
-static uint32_t tim6_get_time_us(void)
+static uint32_t timer_get_time_us(void)
 {
-	uint32_t cnt = timer_get_counter(TIM6);
+	uint32_t cnt = timer_get_counter(TIM3);
 
 	// convert to 1MHz less precise timer value -> units: microseconds
 	uint32_t time_us = cnt * 100;
@@ -211,7 +212,7 @@ int main(void)
 	gpio_setup();
 
 	// provides time_curr_us to usbh_poll function
-	tim6_setup();
+	timer_setup();
 
 #ifdef USART_DEBUG
 	usart_init(USART6, 921600);
@@ -247,7 +248,7 @@ int main(void)
 		// set busy led
 		gpio_set(GPIOD,  GPIO14);
 
-		uint32_t time_curr_us = tim6_get_time_us();
+		uint32_t time_curr_us = timer_get_time_us();
 
 		usbh_poll(time_curr_us);
 
